@@ -27,11 +27,15 @@ export const sampleText: StyledText = {
     },
     {
       at: 58,
-      style: { fontFamily: '"HanaMinA"', fontColor: '#f63', fontSize: 40 },
+      style: { fontColor: '#f63', fontSize: 40 },
     },
     {
       at: 61,
       style: { fontColor: '#777', fontSize: 18 },
+    },
+    {
+      at: 103,
+      style: { fontFamily: "'Zen Kurenaido'",fontColor: '#777', fontSize: 18 },
     },
   ],
   lineHeight: 1.5,

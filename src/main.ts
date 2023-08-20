@@ -119,4 +119,9 @@ const main = () => {
   setting.onUpdate()
 }
 
+const waitWebFont = () => {
+  document.fonts.ready.then(setting.onUpdate);
+}
+
 main()
+waitWebFont()

@@ -1,4 +1,4 @@
-import { CharMetrix } from './drawText/defs'
+import { MeduredMatrix } from './drawText/defs'
 import { drawTextLines, setDebug } from './drawText/drawTextLines'
 import { sampleText } from './sampleText'
 import './style.css'
@@ -68,7 +68,7 @@ const main = () => {
   }
   // cache last metrixes for speed up
   // invalidate if wrapWidth or isVertical changed (see setting.onUpdate)
-  let lastMetrixes: CharMetrix[] | undefined = undefined
+  let lastMetrixes: MeduredMatrix | undefined = undefined
 
   const draw = () => {
     setDebug(setting.debug)
@@ -89,8 +89,8 @@ const main = () => {
     const wrapWidth = isVertical ? height : width
 
     console.time('drawText')
-    const result = drawTextLines(ctx, styledText, x, 0, wrapWidth, { charWidths: lastMetrixes })
-    lastMetrixes = result.charWidths
+    lastMetrixes = drawTextLines(ctx, styledText, x, 0, wrapWidth, lastMetrixes)
+
     console.timeEnd('drawText')
   }
 
@@ -108,9 +108,14 @@ const main = () => {
     ctx.scale(2, 2) // for retina display
 
     // invalidate cached metrixes if wrapWidth or isVertical changed
-    if (lastSetting.wrapWidth !== setting.wrapWidth || lastSetting.isVertical !== setting.isVertical) {
+    if (lastSetting.isVertical !== setting.isVertical) {
       lastMetrixes = undefined
     }
+    if (lastSetting.wrapWidth !== setting.wrapWidth && lastMetrixes ) {
+      lastMetrixes.lineBreaks = undefined
+    }
+    lastSetting.wrapWidth = setting.wrapWidth
+    lastSetting.isVertical = setting.isVertical
 
     draw()
   }

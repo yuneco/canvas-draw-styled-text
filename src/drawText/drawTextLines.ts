@@ -163,10 +163,10 @@ export const drawTextLines = (
     preMedured?.charWidths && preMedured?.lineBreaks
       ? preMedured?.lineBreaks
       : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
+  const boxHeight = lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.lineHeight ?? 1), 0)
 
   ctx.save()
 
-  const boxHeight = lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.lineHeight ?? 1), 0)
   if (text.direction === 'vertical') {
     ctx.rotate(Math.PI / 2 * 1)
     ctx.translate(y, - x)

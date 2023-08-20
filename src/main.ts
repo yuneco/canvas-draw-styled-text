@@ -12,15 +12,16 @@ const setting = {
   // overwrite sampleText
   isVertical: sampleText.direction === 'vertical',
   lineHeight: sampleText.lineHeight ?? 1.5,
+  align: sampleText.align ?? 'left',
   // set on main
   onUpdate: () => {},
 }
 
 const createAppSizeControl = () => {
-  // create slider
+  // init wrapWidth slider
   const widthSlider = $('#wrapWidth') as HTMLInputElement
   widthSlider.value = setting.wrapWidth.toString()
-  // create slider value display span
+  // init slider value display span
   const widthValue = $('#wrapWidthValue')
   widthSlider.addEventListener('input', () => {
     widthValue.innerText = widthSlider.value + 'px'
@@ -28,7 +29,7 @@ const createAppSizeControl = () => {
     setting.onUpdate()
   })
 
-  // create debug checkbox
+  // init debug checkbox
   const debugCheckbox = $('#debug') as HTMLInputElement
   debugCheckbox.checked = setting.debug
   debugCheckbox.addEventListener('change', (e) => {
@@ -36,7 +37,7 @@ const createAppSizeControl = () => {
     setting.onUpdate()
   })
 
-  // create vertical checkbox
+  // init vertical checkbox
   const verticalCheckbox = $('#vertical') as HTMLInputElement
   verticalCheckbox.checked = setting.isVertical
   verticalCheckbox.addEventListener('change', (e) => {
@@ -44,15 +45,27 @@ const createAppSizeControl = () => {
     setting.onUpdate()
   })
 
-  // create lineHeight slider
+  // init lineHeight slider
   const lineHeightSlider = $('#lineHeight') as HTMLInputElement
   lineHeightSlider.value = setting.lineHeight.toString()
-  // create slider value display span
+  // init slider value display span
   const lineHeightValue = $('#lineHeightValue')
   lineHeightSlider.addEventListener('input', () => {
     lineHeightValue.innerText = lineHeightSlider.value
     setting.lineHeight = lineHeightSlider.valueAsNumber
     setting.onUpdate()
+  })
+
+  // init align select
+  const alignSelect = $('#textAlign') as HTMLSelectElement
+  alignSelect.value = setting.align
+  alignSelect.addEventListener('change', (e) => {
+    const value = (e.target as HTMLSelectElement).value
+    const align = (['left', 'center', 'right'] as const).find((a) => a === value)
+    if (align) {
+      setting.align = align
+      setting.onUpdate()
+    }
   })
 }
 
@@ -74,6 +87,7 @@ const main = () => {
     setDebug(setting.debug)
     // copy sampleText and overwrite settings
     const styledText = { ...sampleText }
+    styledText.align = setting.align
     styledText.lineHeight = setting.lineHeight
     styledText.direction = setting.isVertical ? 'vertical' : 'horizontal'
     const isVertical = styledText.direction === 'vertical'

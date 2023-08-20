@@ -111,7 +111,7 @@ const main = () => {
     if (lastSetting.isVertical !== setting.isVertical) {
       lastMetrixes = undefined
     }
-    if (lastSetting.wrapWidth !== setting.wrapWidth && lastMetrixes ) {
+    if (lastSetting.wrapWidth !== setting.wrapWidth && lastMetrixes) {
       lastMetrixes.lineBreaks = undefined
     }
     lastSetting.wrapWidth = setting.wrapWidth
@@ -124,8 +124,9 @@ const main = () => {
   setting.onUpdate()
 }
 
-const waitWebFont = () => {
-  document.fonts.ready.then(setting.onUpdate);
+const waitWebFont = async () => {
+  await document.fonts.ready
+  window.requestAnimationFrame(setting.onUpdate)
 }
 
 main()

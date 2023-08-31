@@ -54,8 +54,14 @@ body {
   background-color: currentColor;
 }
 
+#editor {
+  transition: background-color .5s 1s ease-out;
+}
+
 #canvas {
-  border: 1px solid #ccc;
+  outline: 1px solid #ccc;
+  outline-offset: -1px;
   height: 400px;
   width: 300px;
+  transition: transform 1s ease-out, mix-blend-mode .5s 1s ease-out;
 }

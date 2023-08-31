@@ -23,7 +23,7 @@ export const tiptapStyle2StyledText = (contents: TiptapSegment[]): StyledText<{}
   const initialStyle: Style = {
     fontFamily: "'BIZ UDPGothic', 'Hiragino Kaku Gothic Pro', sans-serif",
     fontSize: 20,
-    fontColor: "#333",
+    fontColor: "#000",
     fontWeight: 400,
     fontStyle: "normal",
   }

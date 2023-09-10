@@ -29,6 +29,7 @@
   },
   "scripts": {
     "dev": "vite --config sample/vite.config.sample.ts",
+    "build-docs": "vite --config sample/vite.config.sample.ts build && tsc",
     "build": "vite build && tsc",
     "preview": "vite preview"
   },

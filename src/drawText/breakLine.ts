@@ -71,6 +71,12 @@ export const lineBreakWithCharMetrixes = (text: string, charMetrixes: CharMetrix
     line.lineDescent = Math.max(line.lineDescent, ...word.chars.map(c => c.metrix.fontBoundingBoxDescent))
 
     index += word.length;
+
+    const isEndOfLine = word.chars.at(-1)?.textChar === '\n'
+    if (isEndOfLine) {
+      line = newLine()
+      line.at = index
+    }
   }
   return lines
 

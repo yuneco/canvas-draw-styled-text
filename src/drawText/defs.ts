@@ -25,6 +25,7 @@ export type StyledText = {
 
 export type CharMetrix = {
   metrix: TextMetrics
+  textChar: string
 }
 
 export type LineMetrix = {
@@ -35,6 +36,6 @@ export type LineMetrix = {
 }
 
 export type MeduredMatrix = {
-  charWidths?: CharMetrix[]
-  lineBreaks?: LineMetrix[]
+  charWidths: CharMetrix[]
+  lineBreaks: LineMetrix[]
 }

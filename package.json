@@ -1,17 +1,42 @@
 {
-  "name": "canvas-text",
-  "private": true,
+  "name": "@yuneco/canvas-text-styled",
+  "author": "yuneco, https://twitter.com/yuneco",
   "license": "MIT",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "keywords": [
+    "canvas",
+    "text",
+    "styled",
+    "multiline"
+  ],
+  "description": "Draw styled & multiline text on canvas. Supports css compatible line break and vertical vertical writing(vertical-rl).",
   "type": "module",
+  "main": "./dist/index.umd.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yuneco/canvas-draw-styled-text.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "require": "./dist/index.umd.cjs",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "vite --config sample/vite.config.sample.ts",
+    "build": "vite build && tsc",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/node": "^20.6.0",
     "typescript": "^5.0.2",
-    "vite": "^4.4.5"
+    "vite": "^4.4.5",
+    "vite-plugin-dts": "^3.5.3"
   },
   "dependencies": {
     "css-line-break": "^2.1.0"

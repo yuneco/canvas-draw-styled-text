@@ -41,7 +41,7 @@ const mesureTextCharWidth = (text: StyledText): CharMetrix[] => {
       currentStyle = { ...currentStyle, ...style.style }
       setStyle(sharedCtx, currentStyle)
     }
-    charWidths.push({ metrix: sharedCtx.measureText(char) })
+    charWidths.push({ metrix: sharedCtx.measureText(char), textChar: char })
   }
   return charWidths
 }
@@ -148,14 +148,57 @@ const drawTextLinesWithWidthAndBreaks = (
   }
 }
 
-export const drawTextLines = (
+/**
+ * mesure text with maxWidth without drawing.
+ * @param text StyledText
+ * @param maxWidth wrap width
+ * @returns measured matrix. you can use this matrix for drawStyledText
+ */
+export const measureStyledText = (
+  text: StyledText,
+  maxWidth: number,
+): MeduredMatrix => {
+  sharedCanvas.style.writingMode = text.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
+  const charWidths = mesureTextCharWidth(text)
+  const lineBreaks = lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
+  return {
+    charWidths,
+    lineBreaks,
+  }
+}
+
+/**
+ * get size of text box.
+ * @param preMesured pre measured matrix.
+ * @returns size of text box.
+ */
+export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width: number, height: number } => {
+  const boxHeight = preMesured.lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent), 0)
+  const boxWidth = Math.max(...preMesured.lineBreaks.map(l => l.width))
+  return {
+    width: boxWidth,
+    height: boxHeight,
+  }
+}
+
+/**
+ * draw styled text.
+ * @param ctx drawing context of canvas.
+ * @param text StyledText
+ * @param x draw start x
+ * @param y draw start y
+ * @param maxWidth wrap width
+ * @param preMedured pre measured matrix. if you want to draw same text multiple times, you can pass this matrix for speed up.
+ * @returns measured matrix. you can use this matrix for drawStyledText. Otherwise, just ignore this return value.
+ */
+export const drawStyledText = (
   ctx: CanvasRenderingContext2D,
   text: StyledText,
   x: number,
   y: number,
   maxWidth: number,
-  preMedured?: MeduredMatrix
-) => {
+  preMedured?: Partial<MeduredMatrix>
+): MeduredMatrix => {
   sharedCanvas.style.writingMode = text.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
 
   const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text)

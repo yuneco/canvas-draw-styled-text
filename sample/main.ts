@@ -1,5 +1,5 @@
-import { MeduredMatrix } from './drawText/defs'
-import { drawTextLines, setDebug } from './drawText/drawTextLines'
+import { MeduredMatrix } from '../src/drawText/defs'
+import { drawStyledText, setDebug } from '../src/drawText/drawTextLines'
 import { sampleText } from './sampleText'
 import './style.css'
 
@@ -81,7 +81,7 @@ const main = () => {
   }
   // cache last metrixes for speed up
   // invalidate if wrapWidth or isVertical changed (see setting.onUpdate)
-  let lastMetrixes: MeduredMatrix | undefined = undefined
+  let lastMetrixes: Partial<MeduredMatrix> | undefined = undefined
 
   const draw = () => {
     setDebug(setting.debug)
@@ -103,7 +103,7 @@ const main = () => {
     const wrapWidth = isVertical ? height : width
 
     console.time('drawText')
-    lastMetrixes = drawTextLines(ctx, styledText, x, 0, wrapWidth, lastMetrixes)
+    lastMetrixes = drawStyledText(ctx, styledText, x, 0, wrapWidth, lastMetrixes)
 
     console.timeEnd('drawText')
   }

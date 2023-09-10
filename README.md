@@ -1,9 +1,9 @@
-# draw styled text on Canvas 
+# Draw styled text on Canvas 
 
 Demo: 
 https://yuneco.github.io/canvas-draw-styled-text/
 
-# Features
+## Features
 
 - [x] font size
 - [x] font family
@@ -14,21 +14,26 @@ https://yuneco.github.io/canvas-draw-styled-text/
 - [x] writing mode: horizontal-tb, vertical-rl（Japanese 縦書き）
 - [] text decoration: underline, line-through, overline
 
-# Usage
+## Usage
 
-## install & import
+### Installation & Import.
+
+To get started, install the package via npm:
 
 ```sh
-npm install @tuneco/canvas-draw-styled-text
+npm install @yuneco/canvas-text-styled
 ```
 
+Then, import the drawStyledText function in your JS/TS code:
+
 ```ts
-import { drawStyledText } from '@tuneco/canvas-draw-styled-text'
+import { drawStyledText } from '@yuneco/canvas-text-styled'
 ```
 
-## drawStyledText
+### Drawing Styled Text
 
 ```ts
+// Define your styled text
 const sampleText: StyledText = {
   // text 
   text: `Hello, world!
@@ -48,12 +53,19 @@ multiline text is supported.`,
   styles: [],
 }
 
-// draw text on ctx at (0, 0) with 300px wrap width
+// Get the canvas context
 const ctx = yourCanvas.getContext('2d')
+if (!ctx) {
+  throw new Error('Failed to get canvas context')
+}
+
+// Draw the text on the canvas at (0, 0) with a wrap width of 300px
 drawStyledText(ctx, sampleText, 0, 0, 300)
 ```
 
-## Use multiplt styles
+### Using Multiple Styles
+
+You can apply multiple styles to your text:
 
 ```ts
 const sampleText: StyledText = {
@@ -70,7 +82,7 @@ multiline text is supported.`,
   direction: 'horizontal',
   // change style
   styles: [
-    // change collor to red at 5th character.
+    // change color to red at 5th character.
     // other style properties are inherited from initialStyle.
     {
       at: 5,
@@ -86,9 +98,9 @@ multiline text is supported.`,
 }
 ```
 
-## Use pre-measured info for performance optimization
+### Using Pre-measured Information for Performance Optimization
 
-`drawStyledText` function returns `MeduredMatrix` object. You can keep and reuse it for performance optimization.
+The drawStyledText function returns a MeasuredMatrix object, which can be used for performance optimization:
 
 ```ts
 // draw and get mesured info
@@ -99,13 +111,12 @@ sampleText.lineHeight *= 1.5
 drawStyledText(ctx, sampleText, 0, 500, 300, mesured)
 ```
 
-pre-measured info contains line break positions and box size of each character.
-So you can reuse it **only for same text and same wrap width**. Otherwise, rendering result will be broken or may cause error.
+The pre-measured information includes line break positions and the size of each character's bounding box. Therefore, it is intended to be reused exclusively for the same text content and under the same wrap width settings. Using it for different text or wrap width configurations may lead to rendering issues or errors.
 
-If you do not need to draw same contents repeatedly or do not mind performance optimization, you can ignore this feature.
+If you do not anticipate the need to repeatedly draw the same content or if performance optimization is not a concern for your application, you can ignore this feature.
 
-# License
+## License
 MIT
 
-# Contact
+## Contact
 https://twitter.com/yuneco

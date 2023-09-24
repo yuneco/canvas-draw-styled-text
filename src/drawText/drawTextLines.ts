@@ -1,6 +1,15 @@
 import { lineBreakWithCharMetrixes } from './breakLine'
 import { drawLineBox, drawLineSeparator, drawMetrixBox, drawOuterBox } from './debugDraw'
-import { Style, StyledText, CharMetrix, StyleInstruction, LineMetrix, MeduredMatrix } from './defs'
+import {
+  Style,
+  StyledText,
+  CharMetrix,
+  StyleInstruction,
+  LineMetrix,
+  MeduredMatrix,
+  LineText,
+  StyledTextSetting,
+} from './defs'
 
 let DEBUG = false
 export const setDebug = (debug: boolean) => {
@@ -40,77 +49,118 @@ const mesureTextCharWidth = (text: StyledText): CharMetrix[] => {
   return charWidths
 }
 
-const linePadding = (line: LineMetrix, lineHeight: number) => {
-  return ((line.lineAscent + line.lineDescent) * (lineHeight - 1)) / 2
+const computeLineText = (styledText: StyledText, charWidths: CharMetrix[], breaks: LineMetrix[]): LineText[] => {
+  const { styles } = styledText
+  const instructions: StyleInstruction[] = []
+  styles.forEach((s) => (instructions[s.at] = s))
+
+  const lines = breaks.map((lineMetrix, index) => {
+    const nextLineMetrix = breaks.at(index + 1)
+    const nextBreakAt = nextLineMetrix ? nextLineMetrix.at : charWidths.length
+    const chars = charWidths.slice(lineMetrix.at, nextBreakAt)
+    const charsWithStyle = chars.map((char, cIndex) => {
+      const style = instructions.at(lineMetrix.at + cIndex)?.style
+      return {
+        char,
+        style,
+      }
+    })
+    return {
+      charsWithStyle,
+      lineMetrix,
+    }
+  })
+
+  return lines
+}
+
+const getLineX = (align: StyledText['align'], lineWidth: number, maxWidth: number) => {
+  switch (align) {
+    case 'center':
+      return (maxWidth - lineWidth) / 2
+    case 'right':
+      return maxWidth - lineWidth
+    default:
+      return 0
+  }
 }
 
 const drawTextLinesWithWidthAndBreaks = (
   ctx: CanvasRenderingContext2D,
-  styledText: StyledText,
-  charWidths: CharMetrix[],
-  breaks: LineMetrix[],
+  lines: LineText[],
+  setting: StyledTextSetting,
   maxWidth: number
 ) => {
-  const { initialStyle, styles, text, lineHeight = 1 } = styledText
-  const instructions: StyleInstruction[] = []
-  styles.forEach((s) => (instructions[s.at] = s))
-  const lines: LineMetrix[] = []
-  breaks.forEach((b) => (lines[b.at] = b))
+  const { initialStyle, align, lineHeight = 1 } = setting
 
-  // check text length equals charWidths length
-  if (text.length !== charWidths.length) {
-    throw new Error('text length and charWidths length are not equal')
+  const pos = {
+    x: 0,
+    y: 0,
   }
 
-  const getLineStartX = () => {
-    switch (styledText.align) {
-      case 'center':
-        return (maxWidth - currentLine.width) / 2
-      case 'right':
-        return maxWidth - currentLine.width
-      default:
-        return 0
-    }
-  }
+  // set initial style
+  let style = { ...initialStyle }
+  setStyle(ctx, style)
 
-  let currentLine = lines[0]
-  let currentStyle = { ...initialStyle }
-  setStyle(ctx, currentStyle)
-  let x = getLineStartX()
-  let y = ((currentLine.lineAscent + currentLine.lineDescent) * (lineHeight - 1)) / 2
+  // each line
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]
+    const lw = line.lineMetrix.width
+    const lx = getLineX(align, line.lineMetrix.width, maxWidth)
+    const lh = line.lineMetrix.lineAscent + line.lineMetrix.lineDescent
+    const lp = (lh * (lineHeight - 1)) / 2
 
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i]
-    const cw = charWidths[i]
-    const style = instructions[i]
-    if (lines[i]) {
-      // new line
-      if (i !== 0) {
-        y += currentLine.lineAscent + currentLine.lineDescent
-        y += linePadding(currentLine, lineHeight)
+    // start pos
+    pos.x = lx
+    pos.y += lp
 
-        // draw line separator
-        DEBUG && drawLineSeparator(ctx, getLineStartX(), y, currentLine.width)
+    // draw line box
+    DEBUG && drawLineBox(ctx, lx, pos.y, line.lineMetrix)
 
-        currentLine = lines[i]
-        x = getLineStartX()
-        y += linePadding(currentLine, lineHeight)
+    // draw each char
+    for (let charIndex = 0; charIndex < line.charsWithStyle.length; charIndex++) {
+      const charWithStyle = line.charsWithStyle.at(charIndex)
+      if (!charWithStyle) break
+      // update style
+      if (charWithStyle.style) {
+        style = { ...style, ...charWithStyle.style }
+        setStyle(ctx, style)
       }
 
-      // draw line box
-      DEBUG && drawLineBox(ctx, x, y, currentLine)
+      // get same style segment
+      if (charIndex === 0 || charWithStyle.style) {
+        const segChars: CharMetrix[] = [charWithStyle.char]
+        const segStart = charIndex
+        const maxLen = line.charsWithStyle.length - segStart
+        for(let segCharIndex = 1; segCharIndex < maxLen; segCharIndex++) {
+          const cs = line.charsWithStyle.at(segStart + segCharIndex)
+          if (!cs || cs.style) {
+            break
+          }
+          segChars.push(cs.char)
+        }
+        const segWidth = segChars.reduce((sum, c) => sum + c.metrix.width, 0)
+        const segText = segChars.map(c => c.textChar).join('')
+
+        // draw segment chars
+        ctx.fillText(segText, pos.x, pos.y + line.lineMetrix.lineAscent)
+        // draw debug char box
+        if (DEBUG) {
+          let cx = pos.x
+          segChars.forEach(c => {
+            drawMetrixBox(ctx, cx, pos.y, line.lineMetrix.lineAscent, c.metrix)
+            cx += c.metrix.width
+          })
+        }
+        // update pos
+        pos.x += segWidth
+      }
     }
 
-    if (style) {
-      currentStyle = { ...currentStyle, ...style.style }
-      setStyle(ctx, currentStyle)
-    }
-    ctx.fillText(char, x, y + currentLine.lineAscent)
-
-    // draw debug box
-    DEBUG && drawMetrixBox(ctx, x, y, currentLine.lineAscent, cw.metrix)
-
-    x += cw.metrix.width
+    // update pos
+    pos.y += lh + lp
+    // draw line separator
+    DEBUG && drawLineSeparator(ctx, lx, pos.y, lw)
   }
 }
 
@@ -173,6 +223,7 @@ export const drawStyledText = (
     (acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.lineHeight ?? 1),
     0
   )
+  const lines = computeLineText(text, charWidths, lineBreaks)
 
   ctx.save()
 
@@ -185,7 +236,7 @@ export const drawStyledText = (
 
   DEBUG && drawOuterBox(ctx, maxWidth, boxHeight)
 
-  drawTextLinesWithWidthAndBreaks(ctx, text, charWidths, lineBreaks, maxWidth)
+  drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)
   ctx.restore()
 
   return {

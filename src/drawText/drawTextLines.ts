@@ -1,12 +1,6 @@
 import { lineBreakWithCharMetrixes } from './breakLine'
-import {
-  Style,
-  StyledText,
-  CharMetrix,
-  StyleInstruction,
-  LineMetrix,
-  MeduredMatrix,
-} from './defs'
+import { drawLineBox, drawLineSeparator, drawMetrixBox, drawOuterBox } from './debugDraw'
+import { Style, StyledText, CharMetrix, StyleInstruction, LineMetrix, MeduredMatrix } from './defs'
 
 let DEBUG = false
 export const setDebug = (debug: boolean) => {
@@ -95,34 +89,16 @@ const drawTextLinesWithWidthAndBreaks = (
         y += currentLine.lineAscent + currentLine.lineDescent
         y += linePadding(currentLine, lineHeight)
 
-        if (DEBUG) {
-          ctx.save()
-          ctx.beginPath()
-          ctx.strokeStyle = 'blue'
-          ctx.setLineDash([2, 2])
-          const lx = getLineStartX()
-          ctx.moveTo(lx, y)
-          ctx.lineTo(lx + currentLine.width, y)
-          ctx.stroke()
-          ctx.restore()
-        }
+        // draw line separator
+        DEBUG && drawLineSeparator(ctx, getLineStartX(), y, currentLine.width)
 
         currentLine = lines[i]
         x = getLineStartX()
         y += linePadding(currentLine, lineHeight)
       }
-      // draw debug line box
-      if (DEBUG) {
-        ctx.save()
-        ctx.beginPath()
-        ctx.strokeStyle = 'blue'
-        ctx.strokeRect(x, y, currentLine.width, currentLine.lineAscent + currentLine.lineDescent)
-        ctx.setLineDash([5, 5])
-        ctx.moveTo(x, y + currentLine.lineAscent)
-        ctx.lineTo(x + currentLine.width, y + currentLine.lineAscent)
-        ctx.stroke()
-        ctx.restore()
-      }
+
+      // draw line box
+      DEBUG && drawLineBox(ctx, x, y, currentLine)
     }
 
     if (style) {
@@ -132,17 +108,7 @@ const drawTextLinesWithWidthAndBreaks = (
     ctx.fillText(char, x, y + currentLine.lineAscent)
 
     // draw debug box
-    if (DEBUG) {
-      ctx.save()
-      ctx.strokeStyle = 'red'
-      ctx.strokeRect(
-        x,
-        y + currentLine.lineAscent - cw.metrix.actualBoundingBoxAscent,
-        cw.metrix.width,
-        cw.metrix.actualBoundingBoxAscent + cw.metrix.actualBoundingBoxDescent
-      )
-      ctx.restore()
-    }
+    DEBUG && drawMetrixBox(ctx, x, y, currentLine.lineAscent, cw.metrix)
 
     x += cw.metrix.width
   }
@@ -154,10 +120,7 @@ const drawTextLinesWithWidthAndBreaks = (
  * @param maxWidth wrap width
  * @returns measured matrix. you can use this matrix for drawStyledText
  */
-export const measureStyledText = (
-  text: StyledText,
-  maxWidth: number,
-): MeduredMatrix => {
+export const measureStyledText = (text: StyledText, maxWidth: number): MeduredMatrix => {
   sharedCanvas.style.writingMode = text.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
   const charWidths = mesureTextCharWidth(text)
   const lineBreaks = lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
@@ -172,9 +135,9 @@ export const measureStyledText = (
  * @param preMesured pre measured matrix.
  * @returns size of text box.
  */
-export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width: number, height: number } => {
+export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width: number; height: number } => {
   const boxHeight = preMesured.lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent), 0)
-  const boxWidth = Math.max(...preMesured.lineBreaks.map(l => l.width))
+  const boxWidth = Math.max(...preMesured.lineBreaks.map((l) => l.width))
   return {
     width: boxWidth,
     height: boxHeight,
@@ -206,29 +169,21 @@ export const drawStyledText = (
     preMedured?.charWidths && preMedured?.lineBreaks
       ? preMedured?.lineBreaks
       : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
-  const boxHeight = lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.lineHeight ?? 1), 0)
+  const boxHeight = lineBreaks.reduce(
+    (acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.lineHeight ?? 1),
+    0
+  )
 
   ctx.save()
 
   if (text.direction === 'vertical') {
-    ctx.rotate(Math.PI / 2 * 1)
-    ctx.translate(y, - x)
+    ctx.rotate((Math.PI / 2) * 1)
+    ctx.translate(y, -x)
   } else {
     ctx.translate(x, y)
   }
 
-  if (DEBUG) {
-    // draw debug box
-    ctx.save()
-    ctx.strokeStyle = 'green'
-    ctx.strokeRect(
-      -1,
-      -1,
-      maxWidth + 2,
-      boxHeight + 2
-    )
-    ctx.restore()
-  }
+  DEBUG && drawOuterBox(ctx, maxWidth, boxHeight)
 
   drawTextLinesWithWidthAndBreaks(ctx, text, charWidths, lineBreaks, maxWidth)
   ctx.restore()
@@ -238,4 +193,3 @@ export const drawStyledText = (
     lineBreaks,
   }
 }
-

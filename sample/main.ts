@@ -14,7 +14,7 @@ const setting = {
   lineHeight: sampleText.lineHeight ?? 1.5,
   align: sampleText.align ?? 'left',
   // set on main
-  onUpdate: () => {},
+  onUpdate: (force?: boolean) => {},
 }
 
 const createAppSizeControl = () => {
@@ -108,7 +108,10 @@ const main = () => {
     console.timeEnd('drawText')
   }
 
-  setting.onUpdate = () => {
+  setting.onUpdate = (force) => {
+    if(force) {
+      lastMetrixes = undefined
+    }
     const isVertical = setting.isVertical
     const DEFAULT_HEIGHT = 800
     const width = isVertical ? DEFAULT_HEIGHT : setting.wrapWidth
@@ -140,7 +143,7 @@ const main = () => {
 
 const waitWebFont = async () => {
   await document.fonts.ready
-  window.requestAnimationFrame(setting.onUpdate)
+  window.requestAnimationFrame(() => setting.onUpdate(true))
 }
 
 main()

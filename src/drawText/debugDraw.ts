@@ -10,11 +10,20 @@ export const drawMetrixBox = (
   ctx.save()
   ctx.strokeStyle = 'red'
   ctx.strokeRect(
-    x,
+    x - metrix.actualBoundingBoxLeft,
     y + lineAscent - metrix.actualBoundingBoxAscent,
-    metrix.width,
+    metrix.actualBoundingBoxRight + metrix.actualBoundingBoxLeft,
     metrix.actualBoundingBoxAscent + metrix.actualBoundingBoxDescent
   )
+
+  // ctx.strokeStyle = 'pink'
+  // ctx.strokeRect(
+  //   x,
+  //   y + lineAscent - metrix.actualBoundingBoxAscent,
+  //   metrix.width,
+  //   metrix.actualBoundingBoxAscent + metrix.actualBoundingBoxDescent
+  // )
+
   ctx.restore()
 }
 

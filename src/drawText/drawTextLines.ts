@@ -21,6 +21,7 @@ const sharedCanvas = document.createElement('canvas')
 sharedCanvas.width = 1
 sharedCanvas.height = 1
 sharedCanvas.style.writingMode = 'vertical-rl'
+
 const sharedCtx = sharedCanvas.getContext('2d')!
 
 const setStyle = (ctx: CanvasRenderingContext2D, style: Style) => {
@@ -31,7 +32,6 @@ const setStyle = (ctx: CanvasRenderingContext2D, style: Style) => {
 const mesureTextCharWidth = (text: StyledText): CharMetrix[] => {
   const { initialStyle, styles } = text
   const charWidths: CharMetrix[] = []
-
   const instructions: StyleInstruction[] = []
   styles.forEach((s) => (instructions[s.at] = s))
 
@@ -85,10 +85,26 @@ const getLineX = (align: StyledText['align'], lineWidth: number, maxWidth: numbe
   }
 }
 
-const drawTextLinesWithWidthAndBreaks = (
+const mergeStyle = <E extends string>(style: Style<E>, newStyle: Partial<Style<E>>): Style<E> => {
+  const { extension, ...rest } = style
+  const { extension: newExtension, ...newRest } = newStyle
+  return {
+    ...rest,
+    ...newRest,
+    extension:
+      !extension && !newExtension
+        ? undefined
+        : {
+            ...extension,
+            ...newExtension,
+          },
+  } as Style<E>
+}
+
+const drawTextLinesWithWidthAndBreaks = <E extends string>(
   ctx: CanvasRenderingContext2D,
   lines: LineText[],
-  setting: StyledTextSetting,
+  setting: StyledTextSetting<E>,
   maxWidth: number
 ) => {
   const { initialStyle, align, lineHeight = 1 } = setting
@@ -100,7 +116,7 @@ const drawTextLinesWithWidthAndBreaks = (
 
   // set initial style
   let style = { ...initialStyle }
-  setStyle(ctx, style)
+  setStyle(ctx, style as Style)
 
   // each line
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -123,8 +139,8 @@ const drawTextLinesWithWidthAndBreaks = (
       if (!charWithStyle) break
       // update style
       if (charWithStyle.style) {
-        style = { ...style, ...charWithStyle.style }
-        setStyle(ctx, style)
+        style = mergeStyle(style, charWithStyle.style as Style<E>)
+        setStyle(ctx, style as Style)
       }
 
       // get same style segment
@@ -132,7 +148,7 @@ const drawTextLinesWithWidthAndBreaks = (
         const segChars: CharMetrix[] = [charWithStyle.char]
         const segStart = charIndex
         const maxLen = line.charsWithStyle.length - segStart
-        for(let segCharIndex = 1; segCharIndex < maxLen; segCharIndex++) {
+        for (let segCharIndex = 1; segCharIndex < maxLen; segCharIndex++) {
           const cs = line.charsWithStyle.at(segStart + segCharIndex)
           if (!cs || cs.style) {
             break
@@ -140,14 +156,22 @@ const drawTextLinesWithWidthAndBreaks = (
           segChars.push(cs.char)
         }
         const segWidth = segChars.reduce((sum, c) => sum + c.metrix.width, 0)
-        const segText = segChars.map(c => c.textChar).join('')
+        const segText = segChars.map((c) => c.textChar).join('')
 
-        // draw segment chars
+        // call extension if exists
+        if (style.extension) {
+          for (let name in style.extension) {
+            const extension = (setting.extensions ?? {})[name]
+            const option = style.extension[name]
+            if (extension && option) extension.apply(ctx, { line, text: segChars, pos, style }, option)
+          }
+        }
+
         ctx.fillText(segText, pos.x, pos.y + line.lineMetrix.lineAscent)
         // draw debug char box
         if (DEBUG) {
           let cx = pos.x
-          segChars.forEach(c => {
+          segChars.forEach((c) => {
             drawMetrixBox(ctx, cx, pos.y, line.lineMetrix.lineAscent, c.metrix)
             cx += c.metrix.width
           })
@@ -204,9 +228,9 @@ export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width
  * @param preMedured pre measured matrix. if you want to draw same text multiple times, you can pass this matrix for speed up.
  * @returns measured matrix. you can use this matrix for drawStyledText. Otherwise, just ignore this return value.
  */
-export const drawStyledText = (
+export const drawStyledText = <E extends string = ''>(
   ctx: CanvasRenderingContext2D,
-  text: StyledText,
+  text: StyledText<E>,
   x: number,
   y: number,
   maxWidth: number,
@@ -214,7 +238,7 @@ export const drawStyledText = (
 ): MeduredMatrix => {
   sharedCanvas.style.writingMode = text.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
 
-  const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text)
+  const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text as StyledText)
   const lineBreaks =
     preMedured?.charWidths && preMedured?.lineBreaks
       ? preMedured?.lineBreaks
@@ -223,9 +247,12 @@ export const drawStyledText = (
     (acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.lineHeight ?? 1),
     0
   )
-  const lines = computeLineText(text, charWidths, lineBreaks)
+  const lines = computeLineText(text as StyledText, charWidths, lineBreaks)
 
   ctx.save()
+  if ((ctx as any).textRendering) {
+    ;(ctx as any).textRendering = 'optimizeSpeed'
+  }
 
   if (text.direction === 'vertical') {
     ctx.rotate((Math.PI / 2) * 1)
@@ -236,7 +263,10 @@ export const drawStyledText = (
 
   DEBUG && drawOuterBox(ctx, maxWidth, boxHeight)
 
+  const savedKerning = ctx.canvas.style.fontKerning
+  ctx.canvas.style.fontKerning = 'none'
   drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)
+  ctx.canvas.style.fontKerning = savedKerning
   ctx.restore()
 
   return {

@@ -1,11 +1,11 @@
+export * from './drawText/defs/style'
 export * from './drawText/defs/metrix'
-export {defineText, type StyledText} from './drawText/defs/defineText'
-export {drawStyledText} from './drawText/drawTextLines'
-export {FONT_WEIGHT_BOLD, FONT_WEIGHT_NORMAL} from './drawText/defs/style'
+export { defineText, type StyledText } from './drawText/defs/defineText'
+export { drawStyledText } from './drawText/drawTextLines'
 
 // sample extensions
-export {markerExtension} from './extensions/marker'
-export {underLineExtension} from './extensions/underline'
+export { markerExtension } from './extensions/marker'
+export { underLineExtension } from './extensions/underline'
 
 // extension types
 export type * from './drawText/defs/extension'

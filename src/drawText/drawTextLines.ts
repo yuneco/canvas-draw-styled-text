@@ -43,7 +43,11 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
   return charWidths
 }
 
-const computeLineText = <M extends ExtensionsMap>(styledText: StyledText<M>, charWidths: CharMetrix[], breaks: LineMetrix[]): LineText[] => {
+const computeLineText = <M extends ExtensionsMap>(
+  styledText: StyledText<M>,
+  charWidths: CharMetrix[],
+  breaks: LineMetrix[]
+): LineText[] => {
   const { styles } = styledText
   const instructions: StyleInstructionWithExtension<M>[] = []
   styles.forEach((s) => (instructions[s.at] = s))
@@ -79,7 +83,10 @@ const getLineX = (align: BaseOptions['align'], lineWidth: number, maxWidth: numb
   }
 }
 
-const mergeStyle = <M extends ExtensionsMap>(style: StyleWithExtension<M>, newStyle: StyleWithExtension<M>): StyleWithExtension<M> => {
+const mergeStyle = <M extends ExtensionsMap>(
+  style: StyleWithExtension<M>,
+  newStyle: StyleWithExtension<M>
+): StyleWithExtension<M> => {
   return {
     ...style,
     ...newStyle,
@@ -148,7 +155,8 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
           const extension = (text.extensions ?? {})[name]
           const option = style[name]
           const currentStyle = { ...style } as Style
-          if (extension && option) extension.beforeSegment(ctx, { line, text: segChars, pos, style: currentStyle }, option)
+          if (extension && option)
+            extension.beforeSegment(ctx, { line, text: segChars, pos, style: currentStyle }, option)
         }
 
         ctx.fillText(segText, pos.x, pos.y + line.lineMetrix.lineAscent)
@@ -172,6 +180,30 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
   }
 }
 
+const getOuterBoxForLines = (
+  lineBreaks: LineMetrix[],
+  maxWidth: number,
+  setting: BaseOptions
+): { x: number; y: number; width: number; height: number } => {
+  // outer box size
+  const boxWidth = Math.max(...lineBreaks.map((l) => l.width))
+  const boxHeight = lineBreaks.reduce(
+    (acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (setting.lineHeight ?? 1),
+    0
+  )
+  const boxX = {
+    left: 0,
+    center: (maxWidth - boxWidth) / 2,
+    right: maxWidth - boxWidth,
+  }[setting.align ?? 'left']
+  return {
+    x: boxX,
+    y: 0,
+    width: boxWidth,
+    height: boxHeight,
+  }
+}
+
 /**
  * mesure text with maxWidth without drawing.
  * @param text StyledText
@@ -185,20 +217,7 @@ export const measureStyledText = (text: StyledText<any>, maxWidth: number): Medu
   return {
     charWidths,
     lineBreaks,
-  }
-}
-
-/**
- * get size of text box.
- * @param preMesured pre measured matrix.
- * @returns size of text box.
- */
-export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width: number; height: number } => {
-  const boxHeight = preMesured.lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent), 0)
-  const boxWidth = Math.max(...preMesured.lineBreaks.map((l) => l.width))
-  return {
-    width: boxWidth,
-    height: boxHeight,
+    outerBox: getOuterBoxForLines(lineBreaks, maxWidth, text.setting),
   }
 }
 
@@ -227,10 +246,6 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
     preMedured?.charWidths && preMedured?.lineBreaks
       ? preMedured?.lineBreaks
       : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
-  const boxHeight = lineBreaks.reduce(
-    (acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.setting.lineHeight ?? 1),
-    0
-  )
   const lines = computeLineText(text, charWidths, lineBreaks)
 
   ctx.save()
@@ -245,7 +260,14 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
     ctx.translate(x, y)
   }
 
-  DEBUG && drawOuterBox(ctx, maxWidth, boxHeight)
+  const box = getOuterBoxForLines(lineBreaks, maxWidth, text.setting)
+  const outerBox = {
+    x: x + box.x,
+    y: y + box.y,
+    width: box.width,
+    height: box.height,
+  }
+  DEBUG && drawOuterBox(ctx, outerBox.x, outerBox.width, outerBox.height)
 
   const savedKerning = ctx.canvas.style.fontKerning
   ctx.canvas.style.fontKerning = 'none'
@@ -256,5 +278,6 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   return {
     charWidths,
     lineBreaks,
+    outerBox,
   }
 }

@@ -1,5 +1,5 @@
-import { ExtensionsMap, InitialStyleWithExtensionOptions, StyleInstructionWithExtension } from "./extension"
-import { BaseOptions } from "./style"
+import { ExtensionsMap, InitialStyleWithExtensionOptions, StyleInstructionWithExtension } from './extension'
+import { BaseOptions } from './style'
 
 /** typed styled text definition with extensions */
 export const defineText = <M extends ExtensionsMap>(param: {

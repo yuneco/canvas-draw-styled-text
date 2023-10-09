@@ -1,4 +1,4 @@
-import { CharMetrix, LineMetrix } from "./defs"
+import { CharMetrix, LineMetrix } from "./defs/metrix"
 import {LineBreaker} from 'css-line-break';
 
 type Word = {

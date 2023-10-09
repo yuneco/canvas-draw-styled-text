@@ -1,12 +1,9 @@
+import { CharMetrix, LineMetrix, LineText, MeduredMatrix } from '..'
 import { lineBreakWithCharMetrixes } from './breakLine'
-import {
-  Style,
-  StyledText,
-  CharMetrix,
-  StyleInstruction,
-  LineMetrix,
-  MeduredMatrix,
-} from './defs'
+import { drawLineBox, drawLineSeparator, drawMetrixBox, drawOuterBox } from './debugDraw'
+import { StyledText } from './defs/defineText'
+import { ExtensionsMap, StyleInstructionWithExtension, StyleWithExtension } from './defs/extension'
+import { Style, BaseOptions } from './defs/style'
 
 let DEBUG = false
 export const setDebug = (debug: boolean) => {
@@ -18,6 +15,7 @@ const sharedCanvas = document.createElement('canvas')
 sharedCanvas.width = 1
 sharedCanvas.height = 1
 sharedCanvas.style.writingMode = 'vertical-rl'
+
 const sharedCtx = sharedCanvas.getContext('2d')!
 
 const setStyle = (ctx: CanvasRenderingContext2D, style: Style) => {
@@ -25,11 +23,10 @@ const setStyle = (ctx: CanvasRenderingContext2D, style: Style) => {
   ctx.fillStyle = style.fontColor
 }
 
-const mesureTextCharWidth = (text: StyledText): CharMetrix[] => {
+const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): CharMetrix[] => {
   const { initialStyle, styles } = text
   const charWidths: CharMetrix[] = []
-
-  const instructions: StyleInstruction[] = []
+  const instructions: StyleInstructionWithExtension<M>[] = []
   styles.forEach((s) => (instructions[s.at] = s))
 
   setStyle(sharedCtx, initialStyle)
@@ -46,105 +43,132 @@ const mesureTextCharWidth = (text: StyledText): CharMetrix[] => {
   return charWidths
 }
 
-const linePadding = (line: LineMetrix, lineHeight: number) => {
-  return ((line.lineAscent + line.lineDescent) * (lineHeight - 1)) / 2
+const computeLineText = <M extends ExtensionsMap>(styledText: StyledText<M>, charWidths: CharMetrix[], breaks: LineMetrix[]): LineText[] => {
+  const { styles } = styledText
+  const instructions: StyleInstructionWithExtension<M>[] = []
+  styles.forEach((s) => (instructions[s.at] = s))
+
+  const lines = breaks.map((lineMetrix, index) => {
+    const nextLineMetrix = breaks.at(index + 1)
+    const nextBreakAt = nextLineMetrix ? nextLineMetrix.at : charWidths.length
+    const chars = charWidths.slice(lineMetrix.at, nextBreakAt)
+    const charsWithStyle = chars.map((char, cIndex) => {
+      const style = instructions.at(lineMetrix.at + cIndex)?.style
+      return {
+        char,
+        style,
+      }
+    })
+    return {
+      charsWithStyle,
+      lineMetrix,
+    }
+  })
+
+  return lines
 }
 
-const drawTextLinesWithWidthAndBreaks = (
+const getLineX = (align: BaseOptions['align'], lineWidth: number, maxWidth: number) => {
+  switch (align) {
+    case 'center':
+      return (maxWidth - lineWidth) / 2
+    case 'right':
+      return maxWidth - lineWidth
+    default:
+      return 0
+  }
+}
+
+const mergeStyle = <M extends ExtensionsMap>(style: StyleWithExtension<M>, newStyle: StyleWithExtension<M>): StyleWithExtension<M> => {
+  return {
+    ...style,
+    ...newStyle,
+  }
+}
+
+const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
   ctx: CanvasRenderingContext2D,
-  styledText: StyledText,
-  charWidths: CharMetrix[],
-  breaks: LineMetrix[],
+  lines: LineText<M>[],
+  text: StyledText<M>,
   maxWidth: number
 ) => {
-  const { initialStyle, styles, text, lineHeight = 1 } = styledText
-  const instructions: StyleInstruction[] = []
-  styles.forEach((s) => (instructions[s.at] = s))
-  const lines: LineMetrix[] = []
-  breaks.forEach((b) => (lines[b.at] = b))
+  const { align, lineHeight = 1 } = text.setting
 
-  // check text length equals charWidths length
-  if (text.length !== charWidths.length) {
-    throw new Error('text length and charWidths length are not equal')
+  const pos = {
+    x: 0,
+    y: 0,
   }
 
-  const getLineStartX = () => {
-    switch (styledText.align) {
-      case 'center':
-        return (maxWidth - currentLine.width) / 2
-      case 'right':
-        return maxWidth - currentLine.width
-      default:
-        return 0
-    }
-  }
+  // set initial style
+  let style: StyleWithExtension<M> = { ...text.initialStyle }
+  setStyle(ctx, style as Style)
 
-  let currentLine = lines[0]
-  let currentStyle = { ...initialStyle }
-  setStyle(ctx, currentStyle)
-  let x = getLineStartX()
-  let y = ((currentLine.lineAscent + currentLine.lineDescent) * (lineHeight - 1)) / 2
+  // each line
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex]
+    const lw = line.lineMetrix.width
+    const lx = getLineX(align, line.lineMetrix.width, maxWidth)
+    const lh = line.lineMetrix.lineAscent + line.lineMetrix.lineDescent
+    const lp = (lh * (lineHeight - 1)) / 2
 
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i]
-    const cw = charWidths[i]
-    const style = instructions[i]
-    if (lines[i]) {
-      // new line
-      if (i !== 0) {
-        y += currentLine.lineAscent + currentLine.lineDescent
-        y += linePadding(currentLine, lineHeight)
+    // start pos
+    pos.x = lx
+    pos.y += lp
 
-        if (DEBUG) {
-          ctx.save()
-          ctx.beginPath()
-          ctx.strokeStyle = 'blue'
-          ctx.setLineDash([2, 2])
-          const lx = getLineStartX()
-          ctx.moveTo(lx, y)
-          ctx.lineTo(lx + currentLine.width, y)
-          ctx.stroke()
-          ctx.restore()
+    // draw line box
+    DEBUG && drawLineBox(ctx, lx, pos.y, line.lineMetrix)
+
+    // draw each char
+    for (let charIndex = 0; charIndex < line.charsWithStyle.length; charIndex++) {
+      const charWithStyle = line.charsWithStyle.at(charIndex)
+      if (!charWithStyle) break
+      // update style
+      if (charWithStyle.style) {
+        style = mergeStyle(style, charWithStyle.style)
+        setStyle(ctx, style as Style)
+      }
+
+      // get same style segment
+      if (charIndex === 0 || charWithStyle.style) {
+        const segChars: CharMetrix[] = [charWithStyle.char]
+        const segStart = charIndex
+        const maxLen = line.charsWithStyle.length - segStart
+        for (let segCharIndex = 1; segCharIndex < maxLen; segCharIndex++) {
+          const cs = line.charsWithStyle.at(segStart + segCharIndex)
+          if (!cs || cs.style) {
+            break
+          }
+          segChars.push(cs.char)
+        }
+        const segWidth = segChars.reduce((sum, c) => sum + c.metrix.width, 0)
+        const segText = segChars.map((c) => c.textChar).join('')
+
+        // call extension if exists
+        for (let name in style) {
+          const extension = (text.extensions ?? {})[name]
+          const option = style[name]
+          const currentStyle = { ...style } as Style
+          if (extension && option) extension.beforeSegment(ctx, { line, text: segChars, pos, style: currentStyle }, option)
         }
 
-        currentLine = lines[i]
-        x = getLineStartX()
-        y += linePadding(currentLine, lineHeight)
-      }
-      // draw debug line box
-      if (DEBUG) {
-        ctx.save()
-        ctx.beginPath()
-        ctx.strokeStyle = 'blue'
-        ctx.strokeRect(x, y, currentLine.width, currentLine.lineAscent + currentLine.lineDescent)
-        ctx.setLineDash([5, 5])
-        ctx.moveTo(x, y + currentLine.lineAscent)
-        ctx.lineTo(x + currentLine.width, y + currentLine.lineAscent)
-        ctx.stroke()
-        ctx.restore()
+        ctx.fillText(segText, pos.x, pos.y + line.lineMetrix.lineAscent)
+        // draw debug char box
+        if (DEBUG) {
+          let cx = pos.x
+          segChars.forEach((c) => {
+            drawMetrixBox(ctx, cx, pos.y, line.lineMetrix.lineAscent, c.metrix)
+            cx += c.metrix.width
+          })
+        }
+        // update pos
+        pos.x += segWidth
       }
     }
 
-    if (style) {
-      currentStyle = { ...currentStyle, ...style.style }
-      setStyle(ctx, currentStyle)
-    }
-    ctx.fillText(char, x, y + currentLine.lineAscent)
-
-    // draw debug box
-    if (DEBUG) {
-      ctx.save()
-      ctx.strokeStyle = 'red'
-      ctx.strokeRect(
-        x,
-        y + currentLine.lineAscent - cw.metrix.actualBoundingBoxAscent,
-        cw.metrix.width,
-        cw.metrix.actualBoundingBoxAscent + cw.metrix.actualBoundingBoxDescent
-      )
-      ctx.restore()
-    }
-
-    x += cw.metrix.width
+    // update pos
+    pos.y += lh + lp
+    // draw line separator
+    DEBUG && drawLineSeparator(ctx, lx, pos.y, lw)
   }
 }
 
@@ -154,11 +178,8 @@ const drawTextLinesWithWidthAndBreaks = (
  * @param maxWidth wrap width
  * @returns measured matrix. you can use this matrix for drawStyledText
  */
-export const measureStyledText = (
-  text: StyledText,
-  maxWidth: number,
-): MeduredMatrix => {
-  sharedCanvas.style.writingMode = text.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
+export const measureStyledText = (text: StyledText<any>, maxWidth: number): MeduredMatrix => {
+  sharedCanvas.style.writingMode = text.setting.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
   const charWidths = mesureTextCharWidth(text)
   const lineBreaks = lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
   return {
@@ -172,9 +193,9 @@ export const measureStyledText = (
  * @param preMesured pre measured matrix.
  * @returns size of text box.
  */
-export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width: number, height: number } => {
+export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width: number; height: number } => {
   const boxHeight = preMesured.lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent), 0)
-  const boxWidth = Math.max(...preMesured.lineBreaks.map(l => l.width))
+  const boxWidth = Math.max(...preMesured.lineBreaks.map((l) => l.width))
   return {
     width: boxWidth,
     height: boxHeight,
@@ -191,46 +212,45 @@ export const getSizeForMeasuredStyledText = (preMesured: MeduredMatrix): { width
  * @param preMedured pre measured matrix. if you want to draw same text multiple times, you can pass this matrix for speed up.
  * @returns measured matrix. you can use this matrix for drawStyledText. Otherwise, just ignore this return value.
  */
-export const drawStyledText = (
+export const drawStyledText = <E extends ExtensionsMap = any>(
   ctx: CanvasRenderingContext2D,
-  text: StyledText,
+  text: StyledText<E>,
   x: number,
   y: number,
   maxWidth: number,
   preMedured?: Partial<MeduredMatrix>
 ): MeduredMatrix => {
-  sharedCanvas.style.writingMode = text.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
+  sharedCanvas.style.writingMode = text.setting.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
 
   const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text)
   const lineBreaks =
     preMedured?.charWidths && preMedured?.lineBreaks
       ? preMedured?.lineBreaks
       : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
-  const boxHeight = lineBreaks.reduce((acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.lineHeight ?? 1), 0)
+  const boxHeight = lineBreaks.reduce(
+    (acc, cur) => acc + (cur.lineAscent + cur.lineDescent) * (text.setting.lineHeight ?? 1),
+    0
+  )
+  const lines = computeLineText(text, charWidths, lineBreaks)
 
   ctx.save()
+  if ((ctx as any).textRendering) {
+    ;(ctx as any).textRendering = 'optimizeSpeed'
+  }
 
-  if (text.direction === 'vertical') {
-    ctx.rotate(Math.PI / 2 * 1)
-    ctx.translate(y, - x)
+  if (text.setting.direction === 'vertical') {
+    ctx.rotate((Math.PI / 2) * 1)
+    ctx.translate(y, -x)
   } else {
     ctx.translate(x, y)
   }
 
-  if (DEBUG) {
-    // draw debug box
-    ctx.save()
-    ctx.strokeStyle = 'green'
-    ctx.strokeRect(
-      -1,
-      -1,
-      maxWidth + 2,
-      boxHeight + 2
-    )
-    ctx.restore()
-  }
+  DEBUG && drawOuterBox(ctx, maxWidth, boxHeight)
 
-  drawTextLinesWithWidthAndBreaks(ctx, text, charWidths, lineBreaks, maxWidth)
+  const savedKerning = ctx.canvas.style.fontKerning
+  ctx.canvas.style.fontKerning = 'none'
+  drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)
+  ctx.canvas.style.fontKerning = savedKerning
   ctx.restore()
 
   return {
@@ -238,4 +258,3 @@ export const drawStyledText = (
     lineBreaks,
   }
 }
-

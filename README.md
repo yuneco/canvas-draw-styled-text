@@ -32,14 +32,12 @@ npm install @yuneco/canvas-text-styled
 Then, import the drawStyledText function in your JS/TS code:
 
 ```ts
-import { drawStyledText, drawStyledText } from '@yuneco/canvas-text-styled'
+import { drawStyledText, defineText } from '@yuneco/canvas-text-styled'
 ```
 
 ### Drawing Styled Text
 
 ```ts
-import { defineText,  } from "@yuneco/canvas-text-styled";
-
 // Define your styled text as JSON object.
 // defineText is a helper function for TypeScript users.
 const sampleText = defineText({
@@ -141,7 +139,7 @@ You can use extensions to add your own custom styles. As an example, canvas-text
 To use the extension, you need to pass it to the `extensions` property of the `defineText` function:
 
 ```ts
-import { defineText, underLineExtension } from "@yuneco/canvas-text-styled";
+import { drawStyledText, defineText, underLineExtension } from "@yuneco/canvas-text-styled";
 
 const sampleText = defineText({
   // text
@@ -209,6 +207,8 @@ multiline text is supported.`,
 You can create your own extensions. An extension is an object that implements the `Extension` interface. Below is an example of a `marker` extension that draws a colored line under the text:
 
 ```ts
+import { Extension } from "@yuneco/canvas-text-styled";
+
 /**
  * options for marker extension.
  * if true, default options will be used.

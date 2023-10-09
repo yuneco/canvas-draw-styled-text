@@ -19,7 +19,7 @@ const defaultUnderLineOption: UnderLineOption = {
  * underline extension.
  */
 export const underLineExtension: Extension<UnderLineOption> = {
-  apply: (ctx, segment, options) => {
+  beforeSegment: (ctx, segment, options) => {
     const opt = options === true ? defaultUnderLineOption : { ...defaultUnderLineOption, ...options }
     const y = segment.pos.y + segment.line.lineMetrix.lineAscent + 1
     ctx.save()

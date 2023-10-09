@@ -15,7 +15,7 @@ export type DrawingSegment = {
 
 /** extension definition */
 export type Extension<O> = {
-  apply: (
+  beforeSegment: (
     /** canvas context */
     ctx: CanvasRenderingContext2D,
     /** drawing content and context info */

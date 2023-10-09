@@ -22,7 +22,7 @@ const defaultMarkerLineOption: MarkerOption = {
  * marker extension.
  */
 export const markerExtension: Extension<MarkerOption> = {
-  apply: (ctx, segment, options) => {
+  beforeSegment: (ctx, segment, options) => {
     const opt = options === true ? defaultMarkerLineOption : { ...defaultMarkerLineOption, ...options }
     const lh = segment.line.lineMetrix.lineAscent + segment.line.lineMetrix.lineDescent
     const w = (opt.width / 100) * lh

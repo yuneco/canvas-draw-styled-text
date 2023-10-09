@@ -148,7 +148,7 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
           const extension = (text.extensions ?? {})[name]
           const option = style[name]
           const currentStyle = { ...style } as Style
-          if (extension && option) extension.apply(ctx, { line, text: segChars, pos, style: currentStyle }, option)
+          if (extension && option) extension.beforeSegment(ctx, { line, text: segChars, pos, style: currentStyle }, option)
         }
 
         ctx.fillText(segText, pos.x, pos.y + line.lineMetrix.lineAscent)

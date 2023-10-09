@@ -18,6 +18,12 @@ export type LineMetrix = {
 export type MeduredMatrix = {
   charWidths: CharMetrix[]
   lineBreaks: LineMetrix[]
+  outerBox: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
 }
 
 /**

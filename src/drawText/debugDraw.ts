@@ -42,9 +42,9 @@ export const drawLineBox = (ctx: CanvasRenderingContext2D, x: number, y: number,
   ctx.restore()
 }
 
-export const drawOuterBox = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+export const drawOuterBox = (ctx: CanvasRenderingContext2D, x: number, w: number, h: number) => {
   ctx.save()
   ctx.strokeStyle = 'green'
-  ctx.strokeRect(0, 0, w, h)
+  ctx.strokeRect(x, 0, w, h)
   ctx.restore()
 }

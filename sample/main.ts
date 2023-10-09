@@ -1,4 +1,4 @@
-import { MeduredMatrix } from '../src/drawText/defs'
+import { MeduredMatrix } from '../src/drawText/defs/metrix'
 import { drawStyledText, setDebug } from '../src/drawText/drawTextLines'
 import { sampleText } from './sampleText'
 import './style.css'
@@ -6,13 +6,13 @@ import './style.css'
 const $ = (selector: string) => document.querySelector(selector) as HTMLElement
 const app = $('#app')!
 
-const setting = {
+const config = {
   wrapWidth: 500,
   debug: false,
   // overwrite sampleText
-  isVertical: sampleText.direction === 'vertical',
-  lineHeight: sampleText.lineHeight ?? 1.5,
-  align: sampleText.align ?? 'left',
+  isVertical: sampleText.setting.direction === 'vertical',
+  lineHeight: sampleText.setting.lineHeight ?? 1.5,
+  align: sampleText.setting.align ?? 'left',
   // set on main
   onUpdate: (force?: boolean) => {},
 }
@@ -20,51 +20,51 @@ const setting = {
 const createAppSizeControl = () => {
   // init wrapWidth slider
   const widthSlider = $('#wrapWidth') as HTMLInputElement
-  widthSlider.value = setting.wrapWidth.toString()
+  widthSlider.value = config.wrapWidth.toString()
   // init slider value display span
   const widthValue = $('#wrapWidthValue')
   widthSlider.addEventListener('input', () => {
     widthValue.innerText = widthSlider.value + 'px'
-    setting.wrapWidth = widthSlider.valueAsNumber
-    setting.onUpdate()
+    config.wrapWidth = widthSlider.valueAsNumber
+    config.onUpdate()
   })
 
   // init debug checkbox
   const debugCheckbox = $('#debug') as HTMLInputElement
-  debugCheckbox.checked = setting.debug
+  debugCheckbox.checked = config.debug
   debugCheckbox.addEventListener('change', (e) => {
-    setting.debug = (e.target as HTMLInputElement).checked
-    setting.onUpdate()
+    config.debug = (e.target as HTMLInputElement).checked
+    config.onUpdate()
   })
 
   // init vertical checkbox
   const verticalCheckbox = $('#vertical') as HTMLInputElement
-  verticalCheckbox.checked = setting.isVertical
+  verticalCheckbox.checked = config.isVertical
   verticalCheckbox.addEventListener('change', (e) => {
-    setting.isVertical = (e.target as HTMLInputElement).checked
-    setting.onUpdate()
+    config.isVertical = (e.target as HTMLInputElement).checked
+    config.onUpdate()
   })
 
   // init lineHeight slider
   const lineHeightSlider = $('#lineHeight') as HTMLInputElement
-  lineHeightSlider.value = setting.lineHeight.toString()
+  lineHeightSlider.value = config.lineHeight.toString()
   // init slider value display span
   const lineHeightValue = $('#lineHeightValue')
   lineHeightSlider.addEventListener('input', () => {
     lineHeightValue.innerText = lineHeightSlider.value
-    setting.lineHeight = lineHeightSlider.valueAsNumber
-    setting.onUpdate()
+    config.lineHeight = lineHeightSlider.valueAsNumber
+    config.onUpdate()
   })
 
   // init align select
   const alignSelect = $('#textAlign') as HTMLSelectElement
-  alignSelect.value = setting.align
+  alignSelect.value = config.align
   alignSelect.addEventListener('change', (e) => {
     const value = (e.target as HTMLSelectElement).value
     const align = (['left', 'center', 'right'] as const).find((a) => a === value)
     if (align) {
-      setting.align = align
-      setting.onUpdate()
+      config.align = align
+      config.onUpdate()
     }
   })
 }
@@ -76,21 +76,21 @@ const main = () => {
   app.appendChild(canvas)
 
   const lastSetting = {
-    wrapWidth: setting.wrapWidth,
-    isVertical: setting.isVertical,
+    wrapWidth: config.wrapWidth,
+    isVertical: config.isVertical,
   }
   // cache last metrixes for speed up
   // invalidate if wrapWidth or isVertical changed (see setting.onUpdate)
   let lastMetrixes: Partial<MeduredMatrix> | undefined = undefined
 
   const draw = () => {
-    setDebug(setting.debug)
+    setDebug(config.debug)
     // copy sampleText and overwrite settings
     const styledText = { ...sampleText }
-    styledText.align = setting.align
-    styledText.lineHeight = setting.lineHeight
-    styledText.direction = setting.isVertical ? 'vertical' : 'horizontal'
-    const isVertical = styledText.direction === 'vertical'
+    styledText.setting.align = config.align
+    styledText.setting.lineHeight = config.lineHeight
+    styledText.setting.direction = config.isVertical ? 'vertical' : 'horizontal'
+    const isVertical = styledText.setting.direction === 'vertical'
 
     // set canvas writing mode for vertical text
     canvas.style.writingMode = isVertical ? 'vertical-rl' : 'horizontal-tb'
@@ -108,14 +108,14 @@ const main = () => {
     console.timeEnd('drawText')
   }
 
-  setting.onUpdate = (force) => {
+  config.onUpdate = (force) => {
     if(force) {
       lastMetrixes = undefined
     }
-    const isVertical = setting.isVertical
+    const isVertical = config.isVertical
     const DEFAULT_HEIGHT = 800
-    const width = isVertical ? DEFAULT_HEIGHT : setting.wrapWidth
-    const height = isVertical ? setting.wrapWidth : DEFAULT_HEIGHT
+    const width = isVertical ? DEFAULT_HEIGHT : config.wrapWidth
+    const height = isVertical ? config.wrapWidth : DEFAULT_HEIGHT
 
     canvas.width = width * 2
     canvas.height = height * 2
@@ -125,25 +125,25 @@ const main = () => {
     ctx.scale(2, 2) // for retina display
 
     // invalidate cached metrixes if wrapWidth or isVertical changed
-    if (lastSetting.isVertical !== setting.isVertical) {
+    if (lastSetting.isVertical !== config.isVertical) {
       lastMetrixes = undefined
     }
-    if (lastSetting.wrapWidth !== setting.wrapWidth && lastMetrixes) {
+    if (lastSetting.wrapWidth !== config.wrapWidth && lastMetrixes) {
       lastMetrixes.lineBreaks = undefined
     }
-    lastSetting.wrapWidth = setting.wrapWidth
-    lastSetting.isVertical = setting.isVertical
+    lastSetting.wrapWidth = config.wrapWidth
+    lastSetting.isVertical = config.isVertical
 
     draw()
   }
 
   createAppSizeControl()
-  setting.onUpdate()
+  config.onUpdate()
 }
 
 const waitWebFont = async () => {
   await document.fonts.ready
-  window.requestAnimationFrame(() => setting.onUpdate(true))
+  window.requestAnimationFrame(() => config.onUpdate(true))
 }
 
 main()

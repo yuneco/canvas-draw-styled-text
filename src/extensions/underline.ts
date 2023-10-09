@@ -1,15 +1,24 @@
-import { StyleExtension } from "../extension"
+import { Extension } from '../drawText/defs/extension'
 
-
-type UnderLineOption = {
-  width: number
-}
+/**
+ * options for underline extension.
+ * if true, default options will be used.
+ */
+type UnderLineOption =
+  | true
+  | {
+      /** width of underline */
+      width: number
+    }
 
 const defaultUnderLineOption: UnderLineOption = {
-  width: 1
-} as const
+  width: 1,
+}
 
-export const underLineExtension: StyleExtension = {
+/**
+ * underline extension.
+ */
+export const underLineExtension: Extension<UnderLineOption> = {
   apply: (ctx, segment, options) => {
     const opt = options === true ? defaultUnderLineOption : { ...defaultUnderLineOption, ...options }
     const y = segment.pos.y + segment.line.lineMetrix.lineAscent + 1
@@ -21,6 +30,5 @@ export const underLineExtension: StyleExtension = {
     ctx.lineTo(segment.pos.x + segment.text.reduce((sum, c) => sum + c.metrix.width, 0), y)
     ctx.stroke()
     ctx.restore()
-  }
+  },
 }
-

@@ -5,6 +5,12 @@ export default defineConfig({
   root: resolve(__dirname),
   base: ".",
   build: {
-    outDir: "../docs"
+    outDir: "../docs",
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        tiptap: resolve(__dirname, 'tiptap.html')
+      }
+    }
   }
 })

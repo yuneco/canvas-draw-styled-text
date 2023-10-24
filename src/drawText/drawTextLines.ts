@@ -249,7 +249,9 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   maxWidth: number,
   preMedured?: Partial<MeduredMatrix>
 ): MeduredMatrix => {
-  sharedCanvas.style.writingMode = text.setting.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
+  const isVertical = text.setting.direction === 'vertical'
+  sharedCanvas.style.writingMode = isVertical ? 'vertical-rl' : 'horizontal-tb'
+  sharedCtx.textBaseline = isVertical ? 'middle' : 'alphabetic';
 
   const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text)
   const lineBreaks =
@@ -267,18 +269,19 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   }
   DEBUG && drawOuterBox(ctx, outerBox.x, outerBox.width, outerBox.height)
 
-
   ctx.save()
+  ctx.textBaseline = sharedCtx.textBaseline
   if ((ctx as any).textRendering) {
     ;(ctx as any).textRendering = 'optimizeSpeed'
   }
 
-  if (text.setting.direction === 'vertical') {
+  if (isVertical) {
     ctx.rotate((Math.PI / 2) * 1)
     ctx.translate(y, -x)
   } else {
     ctx.translate(x, y)
   }
+
 
   const savedKerning = ctx.canvas.style.fontKerning
   ctx.canvas.style.fontKerning = 'none'

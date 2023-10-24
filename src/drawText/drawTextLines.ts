@@ -10,12 +10,16 @@ export const setDebug = (debug: boolean) => {
   DEBUG = debug
 }
 
-// canvas for measure text
+// default shared canvas for measure text
 const sharedCanvas = document.createElement('canvas')
 sharedCanvas.width = 1
 sharedCanvas.height = 1
 sharedCanvas.style.writingMode = 'vertical-rl'
-
+sharedCanvas.style.fontKerning = 'none'
+sharedCanvas.style.visibility = 'hidden'
+sharedCanvas.style.position = 'absolute'
+sharedCanvas.style.top = '-1px'
+document.body.appendChild(sharedCanvas)
 const sharedCtx = sharedCanvas.getContext('2d')!
 
 const setStyle = (ctx: CanvasRenderingContext2D, style: Style) => {
@@ -40,6 +44,7 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
     }
     charWidths.push({ metrix: sharedCtx.measureText(char), textChar: char })
   }
+  console.log(charWidths)
   return charWidths
 }
 
@@ -248,6 +253,16 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
       : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
   const lines = computeLineText(text, charWidths, lineBreaks)
 
+  const box = getOuterBoxForLines(lineBreaks, maxWidth, text.setting)
+  const outerBox = {
+    x: x + box.x,
+    y: y + box.y,
+    width: box.width,
+    height: box.height,
+  }
+  DEBUG && drawOuterBox(ctx, outerBox.x, outerBox.width, outerBox.height)
+
+
   ctx.save()
   if ((ctx as any).textRendering) {
     ;(ctx as any).textRendering = 'optimizeSpeed'
@@ -259,16 +274,7 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   } else {
     ctx.translate(x, y)
   }
-
-  const box = getOuterBoxForLines(lineBreaks, maxWidth, text.setting)
-  const outerBox = {
-    x: x + box.x,
-    y: y + box.y,
-    width: box.width,
-    height: box.height,
-  }
-  DEBUG && drawOuterBox(ctx, outerBox.x, outerBox.width, outerBox.height)
-
+  
   const savedKerning = ctx.canvas.style.fontKerning
   ctx.canvas.style.fontKerning = 'none'
   drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)

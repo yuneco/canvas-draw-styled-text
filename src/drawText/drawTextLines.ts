@@ -10,12 +10,16 @@ export const setDebug = (debug: boolean) => {
   DEBUG = debug
 }
 
-// canvas for measure text
+// default shared canvas for measure text
 const sharedCanvas = document.createElement('canvas')
 sharedCanvas.width = 1
 sharedCanvas.height = 1
 sharedCanvas.style.writingMode = 'vertical-rl'
-
+sharedCanvas.style.fontKerning = 'none'
+sharedCanvas.style.visibility = 'hidden'
+sharedCanvas.style.position = 'absolute'
+sharedCanvas.style.top = '-1px'
+document.body.appendChild(sharedCanvas)
 const sharedCtx = sharedCanvas.getContext('2d')!
 
 const setStyle = (ctx: CanvasRenderingContext2D, style: Style) => {
@@ -38,8 +42,14 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
       currentStyle = { ...currentStyle, ...style.style }
       setStyle(sharedCtx, currentStyle)
     }
-    charWidths.push({ metrix: sharedCtx.measureText(char), textChar: char })
+    // get metrix.
+    // use zero width space for line break.
+    const isBr = char === '\n'
+    const zeroWidthSpace = '\u200b'
+    const metrix = sharedCtx.measureText(isBr ? zeroWidthSpace : char)
+    charWidths.push({ metrix, textChar: char })
   }
+  console.log(charWidths)
   return charWidths
 }
 
@@ -239,7 +249,9 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   maxWidth: number,
   preMedured?: Partial<MeduredMatrix>
 ): MeduredMatrix => {
-  sharedCanvas.style.writingMode = text.setting.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
+  const isVertical = text.setting.direction === 'vertical'
+  sharedCanvas.style.writingMode = isVertical ? 'vertical-rl' : 'horizontal-tb'
+  sharedCtx.textBaseline = isVertical ? 'middle' : 'alphabetic';
 
   const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text)
   const lineBreaks =
@@ -247,18 +259,6 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
       ? preMedured?.lineBreaks
       : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
   const lines = computeLineText(text, charWidths, lineBreaks)
-
-  ctx.save()
-  if ((ctx as any).textRendering) {
-    ;(ctx as any).textRendering = 'optimizeSpeed'
-  }
-
-  if (text.setting.direction === 'vertical') {
-    ctx.rotate((Math.PI / 2) * 1)
-    ctx.translate(y, -x)
-  } else {
-    ctx.translate(x, y)
-  }
 
   const box = getOuterBoxForLines(lineBreaks, maxWidth, text.setting)
   const outerBox = {
@@ -268,6 +268,20 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
     height: box.height,
   }
   DEBUG && drawOuterBox(ctx, outerBox.x, outerBox.width, outerBox.height)
+
+  ctx.save()
+  ctx.textBaseline = sharedCtx.textBaseline
+  if ((ctx as any).textRendering) {
+    ;(ctx as any).textRendering = 'optimizeSpeed'
+  }
+
+  if (isVertical) {
+    ctx.rotate((Math.PI / 2) * 1)
+    ctx.translate(y, -x)
+  } else {
+    ctx.translate(x, y)
+  }
+
 
   const savedKerning = ctx.canvas.style.fontKerning
   ctx.canvas.style.fontKerning = 'none'

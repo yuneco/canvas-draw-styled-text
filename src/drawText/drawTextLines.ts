@@ -42,7 +42,12 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
       currentStyle = { ...currentStyle, ...style.style }
       setStyle(sharedCtx, currentStyle)
     }
-    charWidths.push({ metrix: sharedCtx.measureText(char), textChar: char })
+    // get metrix.
+    // use zero width space for line break.
+    const isBr = char === '\n'
+    const zeroWidthSpace = '\u200b'
+    const metrix = sharedCtx.measureText(isBr ? zeroWidthSpace : char)
+    charWidths.push({ metrix, textChar: char })
   }
   console.log(charWidths)
   return charWidths
@@ -274,7 +279,7 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   } else {
     ctx.translate(x, y)
   }
-  
+
   const savedKerning = ctx.canvas.style.fontKerning
   ctx.canvas.style.fontKerning = 'none'
   drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)

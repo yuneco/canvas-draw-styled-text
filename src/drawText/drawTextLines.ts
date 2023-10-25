@@ -49,7 +49,6 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
     const metrix = sharedCtx.measureText(isBr ? zeroWidthSpace : char)
     charWidths.push({ metrix, textChar: char })
   }
-  console.log(charWidths)
   return charWidths
 }
 

@@ -21,7 +21,10 @@ const defaultUnderLineOption: UnderLineOption = {
 export const underLineExtension: Extension<UnderLineOption> = {
   beforeSegment: (ctx, segment, options) => {
     const opt = options === true ? defaultUnderLineOption : { ...defaultUnderLineOption, ...options }
-    const y = segment.pos.y + segment.line.lineMetrix.lineAscent + 1
+    const isMiddle = ctx.textBaseline === 'middle'
+    const y = isMiddle
+      ? segment.pos.y + segment.line.lineMetrix.lineAscent + segment.line.lineMetrix.lineDescent
+      : segment.pos.y + segment.line.lineMetrix.lineAscent + 1
     ctx.save()
     ctx.beginPath()
     ctx.strokeStyle = segment.style.fontColor

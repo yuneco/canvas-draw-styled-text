@@ -1,4 +1,4 @@
-import { FONT_WEIGHT_BOLD, FONT_WEIGHT_NORMAL, defineText, markerExtension, underLineExtension } from "../src";
+import { FONT_WEIGHT_BOLD, FONT_WEIGHT_NORMAL, defineText, markerExtension, underLineExtension } from '../src'
 
 export const sampleText = defineText({
   // text content to draw
@@ -21,8 +21,8 @@ export const sampleText = defineText({
   },
   // initial style
   initialStyle: {
-    fontFamily: 'sans-serif',
-    fontSize: 20,
+    fontFamily: '"Noto Sans JP", "Hiragino Maru Gothic Pro"',
+    fontSize: 30,
     fontColor: '#333',
     fontWeight: FONT_WEIGHT_NORMAL,
     fontStyle: 'normal',
@@ -31,9 +31,9 @@ export const sampleText = defineText({
   styles: [
     {
       at: 5,
-      style: { fontFamily: '"Times"', fontWeight: FONT_WEIGHT_BOLD, fontSize: 36, fontColor: '#39a' },
+      style: { fontWeight: FONT_WEIGHT_BOLD, fontSize: 36, fontColor: '#39a' },
     },
-    { at: 12, style: { fontFamily: '"Hiragino Maru Gothic Pro"', fontSize: 18, fontColor: '#777' } },
+    { at: 12, style: { fontSize: 18, fontColor: '#777' } },
     {
       at: 22,
       style: { fontWeight: FONT_WEIGHT_BOLD, fontSize: 32, fontColor: '#ea3' },
@@ -63,7 +63,6 @@ export const sampleText = defineText({
     {
       at: 101,
       style: {
-        fontFamily: "'Zen Kurenaido'",
         fontColor: '#777',
         fontSize: 18,
       },
@@ -77,14 +76,12 @@ export const sampleText = defineText({
     {
       at: 113,
       style: {
-        fontFamily: 'BIZ UDPGothic',
         marker: { color: 'gold' },
       },
     },
     {
       at: 122,
       style: {
-        fontFamily: "'Zen Kurenaido'",
         marker: false,
       },
     },
@@ -98,6 +95,18 @@ export const sampleText = defineText({
       at: 188,
       style: {
         underline: false,
+      },
+    },
+    {
+      at: 197,
+      style: {
+        fontSize: 48,
+      },
+    },
+    {
+      at: 202,
+      style: {
+        fontSize: 32,
       },
     },
   ],

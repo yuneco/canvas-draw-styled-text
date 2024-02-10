@@ -1,5 +1,6 @@
 import { CharMetrix, LineMetrix, LineText, MeduredMatrix } from '..'
 import { lineBreakWithCharMetrixes } from './breakLine'
+import { getSafariVerticalOffset } from './compatibility/safari'
 import { drawLineBox, drawLineSeparator, drawMetrixBox, drawOuterBox } from './debugDraw'
 import { StyledText } from './defs/defineText'
 import { ExtensionsMap, StyleInstructionWithExtension, StyleWithExtension } from './defs/extension'
@@ -99,6 +100,7 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
   maxWidth: number
 ) => {
   const { align, lineHeight = 1 } = text.setting
+  const isVertical = text.setting.direction === 'vertical'
 
   const pos = {
     x: 0,
@@ -158,7 +160,11 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
             extension.beforeSegment(ctx, { line, text: segChars, pos, style: currentStyle }, option)
         }
 
-        ctx.fillText(segText, pos.x, pos.y + line.lineMetrix.lineAscent)
+        // get drawing offset for safari bug
+        const fitstChar = segChars.at(0)
+        const adjustment = isVertical && fitstChar ? getSafariVerticalOffset(fitstChar.metrix) : { x: 0, y: 0 }
+
+        ctx.fillText(segText, pos.x - adjustment.x, pos.y + line.lineMetrix.lineAscent)
         // draw debug char box
         if (DEBUG) {
           let cx = pos.x
@@ -267,7 +273,6 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   } else {
     ctx.translate(x, y)
   }
-
 
   const savedKerning = ctx.canvas.style.fontKerning
   ctx.canvas.style.fontKerning = 'none'

@@ -1,26 +1,16 @@
 import { CharMetrix, LineMetrix, LineText, MeduredMatrix } from '..'
 import { lineBreakWithCharMetrixes } from './breakLine'
+import { getSafariVerticalOffset } from './compatibility/safari'
 import { drawLineBox, drawLineSeparator, drawMetrixBox, drawOuterBox } from './debugDraw'
 import { StyledText } from './defs/defineText'
 import { ExtensionsMap, StyleInstructionWithExtension, StyleWithExtension } from './defs/extension'
 import { Style, BaseOptions } from './defs/style'
+import { sharedCtx } from './sharedCtx'
 
 let DEBUG = false
 export const setDebug = (debug: boolean) => {
   DEBUG = debug
 }
-
-// default shared canvas for measure text
-const sharedCanvas = document.createElement('canvas')
-sharedCanvas.width = 1
-sharedCanvas.height = 1
-sharedCanvas.style.writingMode = 'vertical-rl'
-sharedCanvas.style.fontKerning = 'none'
-sharedCanvas.style.visibility = 'hidden'
-sharedCanvas.style.position = 'absolute'
-sharedCanvas.style.top = '-1px'
-document.body.appendChild(sharedCanvas)
-const sharedCtx = sharedCanvas.getContext('2d')!
 
 const setStyle = (ctx: CanvasRenderingContext2D, style: Style) => {
   ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`
@@ -33,23 +23,23 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
   const instructions: StyleInstructionWithExtension<M>[] = []
   styles.forEach((s) => (instructions[s.at] = s))
 
-  setStyle(sharedCtx, initialStyle)
+  const ctx = sharedCtx(text.setting.direction)
+  setStyle(ctx, initialStyle)
   let currentStyle = { ...initialStyle }
   for (let i = 0; i < text.text.length; i++) {
     const char = text.text[i]
     const style = instructions[i]
     if (style) {
       currentStyle = { ...currentStyle, ...style.style }
-      setStyle(sharedCtx, currentStyle)
+      setStyle(ctx, currentStyle)
     }
     // get metrix.
     // use zero width space for line break.
     const isBr = char === '\n'
     const zeroWidthSpace = '\u200b'
-    const metrix = sharedCtx.measureText(isBr ? zeroWidthSpace : char)
+    const metrix = ctx.measureText(isBr ? zeroWidthSpace : char)
     charWidths.push({ metrix, textChar: char })
   }
-  console.log(charWidths)
   return charWidths
 }
 
@@ -110,6 +100,7 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
   maxWidth: number
 ) => {
   const { align, lineHeight = 1 } = text.setting
+  const isVertical = text.setting.direction === 'vertical'
 
   const pos = {
     x: 0,
@@ -169,7 +160,11 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
             extension.beforeSegment(ctx, { line, text: segChars, pos, style: currentStyle }, option)
         }
 
-        ctx.fillText(segText, pos.x, pos.y + line.lineMetrix.lineAscent)
+        // get drawing offset for safari bug
+        const fitstChar = segChars.at(0)
+        const adjustment = isVertical && fitstChar ? getSafariVerticalOffset(fitstChar.metrix) : { x: 0, y: 0 }
+
+        ctx.fillText(segText, pos.x - adjustment.x, pos.y + line.lineMetrix.lineAscent)
         // draw debug char box
         if (DEBUG) {
           let cx = pos.x
@@ -221,7 +216,6 @@ const getOuterBoxForLines = (
  * @returns measured matrix. you can use this matrix for drawStyledText
  */
 export const measureStyledText = (text: StyledText<any>, maxWidth: number): MeduredMatrix => {
-  sharedCanvas.style.writingMode = text.setting.direction === 'vertical' ? 'vertical-rl' : 'horizontal-tb'
   const charWidths = mesureTextCharWidth(text)
   const lineBreaks = lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
   return {
@@ -250,8 +244,6 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   preMedured?: Partial<MeduredMatrix>
 ): MeduredMatrix => {
   const isVertical = text.setting.direction === 'vertical'
-  sharedCanvas.style.writingMode = isVertical ? 'vertical-rl' : 'horizontal-tb'
-  sharedCtx.textBaseline = isVertical ? 'middle' : 'alphabetic';
 
   const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text)
   const lineBreaks =
@@ -270,7 +262,7 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   DEBUG && drawOuterBox(ctx, outerBox.x, outerBox.width, outerBox.height)
 
   ctx.save()
-  ctx.textBaseline = sharedCtx.textBaseline
+  ctx.textBaseline = isVertical ? 'middle' : 'alphabetic'
   if ((ctx as any).textRendering) {
     ;(ctx as any).textRendering = 'optimizeSpeed'
   }
@@ -281,7 +273,6 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   } else {
     ctx.translate(x, y)
   }
-
 
   const savedKerning = ctx.canvas.style.fontKerning
   ctx.canvas.style.fontKerning = 'none'

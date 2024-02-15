@@ -109,7 +109,7 @@ const main = () => {
   }
 
   config.onUpdate = (force) => {
-    if(force) {
+    if (force) {
       lastMetrixes = undefined
     }
     const isVertical = config.isVertical

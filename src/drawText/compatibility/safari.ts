@@ -8,8 +8,20 @@ const isSaf15 = () => {
 const hasVerticalTextOffsetBug = isSaf15()
 
 export const getSafariVerticalOffset = (box: TextMetrics): { x: number; y: number } => {
-  const offsetX = hasVerticalTextOffsetBug ? box.hangingBaseline - box.alphabeticBaseline : 0
-  const offsetY = hasVerticalTextOffsetBug ? box.alphabeticBaseline : 0
+  type SafariTextMetrics = TextMetrics & {
+    hangingBaseline?: number
+    alphabeticBaseline?: number
+  }
+
+  const hangingBaseline = (box as SafariTextMetrics).hangingBaseline
+  const alphabeticBaseline = (box as SafariTextMetrics).alphabeticBaseline
+
+  if (hangingBaseline === undefined || alphabeticBaseline === undefined) {
+    return { x: 0, y: 0 }
+  }
+
+  const offsetX = hasVerticalTextOffsetBug ? hangingBaseline - alphabeticBaseline : 0
+  const offsetY = hasVerticalTextOffsetBug ? alphabeticBaseline : 0
 
   return { x: offsetX, y: offsetY }
 }

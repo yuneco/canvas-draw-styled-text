@@ -1,7 +1,7 @@
 const isSaf15 = () => {
   const ua = window.navigator.userAgent.toLowerCase()
   const isSaf = ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1
-  const is15 = ua.match(/version\/15\.([.0-9])+ safari\//)
+  const is15 = ua.match(/version\/15\.[.0-9]+ .*safari\//) !== null
   return isSaf && is15
 }
 

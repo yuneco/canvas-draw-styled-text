@@ -6,6 +6,7 @@ import { StyledText } from './defs/defineText'
 import { ExtensionsMap, StyleInstructionWithExtension, StyleWithExtension } from './defs/extension'
 import { Style, BaseOptions } from './defs/style'
 import { sharedCtx } from './sharedCtx'
+import { splitText } from './splitText'
 
 let DEBUG = false
 export const setDebug = (debug: boolean) => {
@@ -23,11 +24,14 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
   const instructions: StyleInstructionWithExtension<M>[] = []
   styles.forEach((s) => (instructions[s.at] = s))
 
+  const chars = splitText(text.text, text.setting.lang)
+  const textLength = chars.length
+
   const ctx = sharedCtx(text.setting.direction)
   setStyle(ctx, initialStyle)
   let currentStyle = { ...initialStyle }
-  for (let i = 0; i < text.text.length; i++) {
-    const char = text.text[i]
+  for (let i = 0; i < textLength; i++) {
+    const char = chars[i]
     const style = instructions[i]
     if (style) {
       currentStyle = { ...currentStyle, ...style.style }

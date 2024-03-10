@@ -3,14 +3,16 @@ import { FONT_WEIGHT_BOLD, FONT_WEIGHT_NORMAL, defineText, markerExtension, unde
 export const sampleText = defineText({
   // text content to draw
   text: `Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt _~^,|...
-
-花子は、古びたアトリエで縦書きCanvasに思いを馳せていた。彼女の心は、過去の情熱的な絵画と未来の可能性とで彩られていた。CanvasRenderingContext2Dを通じて、彼女の筆が魔法のように踊り、色と形が交じり合う。「その魔法のキャンバスには、季節が舞い、想像が咲く」。花子の作品は、縦書きならではの風情が溢れ、心の底からの芸術の詩となるのだった。
--fin-`,
+山路を登りながら、こう考えた。
+智に働けば角が立つ。情に棹させば流される。意地を通せば窮屈だ。とかくに人の世は住みにくい。
+emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧fin.
+`,
   // base settings applied to whole text box
   setting: {
     lineHeight: 1.5,
     align: 'left',
     direction: 'horizontal',
+    lang: 'ja',
   },
   // style extensions to apply.
   // register your extension here.
@@ -74,39 +76,24 @@ export const sampleText = defineText({
       },
     },
     {
-      at: 113,
+      at: 116,
       style: {
         marker: { color: 'gold' },
       },
     },
     {
-      at: 122,
+      at: 126,
       style: {
         marker: false,
-      },
-    },
-    {
-      at: 163,
-      style: {
-        underline: true,
-      },
-    },
-    {
-      at: 188,
-      style: {
-        underline: false,
-      },
-    },
-    {
-      at: 197,
-      style: {
-        fontSize: 48,
-      },
-    },
-    {
-      at: 202,
-      style: {
         fontSize: 32,
+      },
+    },
+    {
+      at: 162,
+      style: {
+        fontFamily: '"Hiragino Maru Gothic Pro"',
+        underline: true,
+        fontSize: 48,
       },
     },
   ],

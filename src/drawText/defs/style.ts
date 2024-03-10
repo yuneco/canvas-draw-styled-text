@@ -16,4 +16,6 @@ export type BaseOptions = {
   align?: 'left' | 'center' | 'right'
   /** text direction */
   direction?: 'vertical' | 'horizontal'
+  /** text lang. default: html lang prop */
+  lang?: string
 }

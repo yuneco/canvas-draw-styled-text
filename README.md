@@ -50,6 +50,8 @@ multiline text is supported.`,
     lineHeight: 1.5,
     align: 'left',
     direction: 'horizontal',
+    // lang for Intl.Segmenter (used for get char length)
+    lang: 'en',
   },
 
   // extensions.
@@ -139,7 +141,7 @@ You can use extensions to add your own custom styles. As an example, canvas-text
 To use the extension, you need to pass it to the `extensions` property of the `defineText` function:
 
 ```ts
-import { drawStyledText, defineText, underLineExtension } from "@yuneco/canvas-text-styled";
+import { drawStyledText, defineText, underLineExtension } from '@yuneco/canvas-text-styled'
 
 const sampleText = defineText({
   // text
@@ -147,7 +149,9 @@ const sampleText = defineText({
 multiline text is supported.`,
 
   // text box common settings
-  setting: { /* ... */ },
+  setting: {
+    /* ... */
+  },
 
   // extensions.
   // pass key-value pairs.
@@ -207,7 +211,7 @@ multiline text is supported.`,
 You can create your own extensions. An extension is an object that implements the `Extension` interface. Below is an example of a `marker` extension that draws a colored line under the text:
 
 ```ts
-import { Extension } from "@yuneco/canvas-text-styled";
+import { Extension } from '@yuneco/canvas-text-styled'
 
 /**
  * options for marker extension.
@@ -240,7 +244,7 @@ export const markerExtension: Extension<MarkerOption> = {
     // check passed option and use the default if necessary.
     const opt = options === true ? defaultMarkerLineOption : { ...defaultMarkerLineOption, ...options }
     // Calculate the position and size of the marker.
-    // 2nd parameter includes the text content and the position of the exch character.    
+    // 2nd parameter includes the text content and the position of the exch character.
     const lh = segment.line.lineMetrix.lineAscent + segment.line.lineMetrix.lineDescent
     const w = (opt.width / 100) * lh
     const y = segment.pos.y + lh - w / 2

@@ -18,4 +18,6 @@ export type BaseOptions = {
   direction?: 'vertical' | 'horizontal'
   /** text lang. default: html lang prop */
   lang?: string
+  /** line breake method for overflown line. default is normal */
+  overflowWrap?: 'normal' | 'break-word'
 }

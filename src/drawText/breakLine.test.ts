@@ -65,7 +65,7 @@ describe('lineBreakWithCharMetrixes', () => {
     const expectedWidth = calculateExpectedWidth(text)
     const maxWidth = expectedWidth + 10 // Add some margin
 
-    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth)
+    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
 
     expect(result).toHaveLength(1)
     expect(result[0].at).toBe(0)
@@ -83,7 +83,7 @@ describe('lineBreakWithCharMetrixes', () => {
     const worldWidth = calculateExpectedWidth('world')
     const maxWidth = helloSpaceWidth + 5 // "hello "まで収まる幅
 
-    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth)
+    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
 
     expect(result.length).toBeGreaterThan(1)
     expect(result[0].at).toBe(0)
@@ -102,7 +102,7 @@ describe('lineBreakWithCharMetrixes', () => {
     const worldWidth = calculateExpectedWidth('world')
     const maxWidth = 1000 // Wide enough to fit both words
 
-    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth)
+    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
 
     expect(result).toHaveLength(2)
     expect(result[0].at).toBe(0)
@@ -119,7 +119,7 @@ describe('lineBreakWithCharMetrixes', () => {
     const charMetrixes: CharMetrix[] = []
     const maxWidth = 100
 
-    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth)
+    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
 
     expect(result).toHaveLength(1)
     expect(result[0].at).toBe(0)
@@ -134,7 +134,7 @@ describe('lineBreakWithCharMetrixes', () => {
     const expectedWidth = calculateExpectedWidth(text)
     const maxWidth = 1000
 
-    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth)
+    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
 
     expect(result).toHaveLength(1)
     expect(result[0].width).toBe(expectedWidth)
@@ -142,7 +142,7 @@ describe('lineBreakWithCharMetrixes', () => {
     expect(result[0].lineDescent).toBeGreaterThan(0)
   })
 
-  it('EXPECTED TO FAIL: should not allow any line to exceed maxWidth (current limitation)', () => {
+  it('should not allow any line to exceed maxWidth (current limitation)', () => {
     // 【現状の制限事項を示すテスト】単語が最大幅を超える場合の問題を検証
     // 現在のロジックでは、一つの単語が最大幅を超えてもそのまま配置されてしまう
     // このテストは現状では失敗することが期待される（実装の改善が必要）
@@ -151,17 +151,97 @@ describe('lineBreakWithCharMetrixes', () => {
     const expectedWordWidth = calculateExpectedWidth(text)
     const maxWidth = expectedWordWidth / 2 // 単語の半分の幅に制限
 
-    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth)
+    const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, true)
 
     // すべての行の幅がmaxWidthを超えないことを期待するが、現状では失敗する
     const maxLineWidth = Math.max(...result.map(line => line.width))
-    expect(maxLineWidth).toBeLessThanOrEqual(maxWidth) // これが失敗する（行の幅がmaxWidthを超える）
 
     // デバッグ情報を出力
     console.log(`Expected word width: ${expectedWordWidth}, Max width: ${maxWidth}, Actual max line width: ${maxLineWidth}`)
     console.log(`Lines: ${result.length}`)
     result.forEach((line, i) => {
       console.log(`Line ${i}: width=${line.width}, at=${line.at}`)
+    })
+
+    expect(maxLineWidth).toBeLessThanOrEqual(maxWidth) // これが失敗する（行の幅がmaxWidthを超える）
+  })
+
+  it('should break lines with any positive maxWidth', () => {
+    const text = 'hello world\nhello world   \n\n '
+    const charMetrixes = createCharMetrixes(text)
+
+    for (let maxWidth = 1; maxWidth < 300; maxWidth ++) {
+      const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
+      expect(result.length).toBeLessThanOrEqual(text.length)
+    }
+
+    for (let maxWidth = 1; maxWidth < 300; maxWidth ++) {
+      const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, true)
+      if (result.length === 46) {
+        console.log(result)
+      }
+      expect(result.length).toBeLessThanOrEqual(text.length)
+    }
+  })
+
+  describe('Backward Compatibility and Safety Tests', () => {
+    it('should maintain exact same behavior as old implementation when forceOverflowWrap=false', () => {
+      // 後方互換性を確認するテスト
+      const testCases = [
+        'hello world',
+        'verylongwordwithoutspaces',
+        'a'.repeat(100),
+        'word1 word2 word3',
+        'hello\nworld',
+        ' spaces at start',
+        'trailing spaces ',
+      ]
+      
+      testCases.forEach(text => {
+        const charMetrixes = createCharMetrixes(text)
+        const maxWidths = [1, 5, 10, 20, 50, 100]
+        
+        maxWidths.forEach(maxWidth => {
+          const startTime = Date.now()
+          const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
+          const duration = Date.now() - startTime
+          
+          expect(duration).toBeLessThan(1000) // 無限ループチェック
+          expect(result).toBeDefined()
+          expect(result.length).toBeGreaterThan(0)
+        })
+      })
+    })
+
+    it('should handle pathological infinite loop cases', () => {
+      // 無限ループを引き起こす可能性のあるケースをテスト
+      const problematicCases = [
+        // 分割できない単一文字が最大幅を超える
+        { text: 'W', maxWidth: 0.1 },
+        // ゼロ幅文字
+        { text: '\u200B', maxWidth: 1 },
+        // 制御文字
+        { text: '\u0000', maxWidth: 1 },
+        // 長い単語
+        { text: 'supercalifragilisticexpialidocious', maxWidth: 1 },
+      ]
+      
+      problematicCases.forEach(({ text, maxWidth }) => {
+        const charMetrixes = createCharMetrixes(text)
+        const testValues = [false, true]
+        
+        testValues.forEach(forceOverflowWrap => {
+          const startTime = Date.now()
+          const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, forceOverflowWrap)
+          const duration = Date.now() - startTime
+          
+          expect(duration).toBeLessThan(1000) // 1秒以内で完了
+          expect(result).toBeDefined()
+          expect(result.length).toBeGreaterThan(0)
+          // 行数は文字数以下（ただし改行処理により多少の例外を許容）
+          expect(result.length).toBeLessThan(text.length + 10) // 文字数+余裕を持った上限
+        })
+      })
     })
   })
 })

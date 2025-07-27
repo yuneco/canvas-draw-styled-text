@@ -4,6 +4,7 @@ export const sampleText = defineText({
   // text content to draw
   text: `Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt _~^,|...
 山路を登りながら、こう考えた。
+
 智に働けば角が立つ。情に棹させば流される。意地を通せば窮屈だ。とかくに人の世は住みにくい。
 emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧fin.
 `,
@@ -13,6 +14,7 @@ emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧fin.
     align: 'left',
     direction: 'horizontal',
     lang: 'ja',
+    overflowWrap: 'break-word',
   },
   // style extensions to apply.
   // register your extension here.
@@ -76,13 +78,13 @@ emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧fin.
       },
     },
     {
-      at: 116,
+      at: 117,
       style: {
         marker: { color: 'gold' },
       },
     },
     {
-      at: 126,
+      at: 127,
       style: {
         marker: false,
         fontSize: 32,

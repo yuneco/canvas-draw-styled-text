@@ -12,5 +12,17 @@ export default defineConfig({
     },
   },
   plugins: [dts({
-  })]
+  })],
+  test: {
+    browser: {
+      enabled: true,
+      instances: [
+        {
+          browser: 'chromium',
+        }
+      ],
+      provider: 'playwright',
+      headless: true,
+    },
+  },
 })

@@ -13,6 +13,7 @@ const config = {
   isVertical: sampleText.setting.direction === 'vertical',
   lineHeight: sampleText.setting.lineHeight ?? 1.5,
   align: sampleText.setting.align ?? 'left',
+  overflowWrap: sampleText.setting.overflowWrap ?? 'normal',
   // set on main
   onUpdate: (force?: boolean) => {},
 }
@@ -67,6 +68,15 @@ const createAppSizeControl = () => {
       config.onUpdate()
     }
   })
+
+  // init overflowWrap select
+  const overflowWrapSelect = $('#overflowWrap') as HTMLSelectElement
+  overflowWrapSelect.value = config.overflowWrap
+  overflowWrapSelect.addEventListener('change', (e) => {
+    const value = (e.target as HTMLSelectElement).value
+    config.overflowWrap = value === 'break-word' ? 'break-word' : 'normal'
+    config.onUpdate()
+  })
 }
 
 const main = () => {
@@ -78,6 +88,7 @@ const main = () => {
   const lastSetting = {
     wrapWidth: config.wrapWidth,
     isVertical: config.isVertical,
+    overflowWrap: config.overflowWrap,
   }
   // cache last metrixes for speed up
   // invalidate if wrapWidth or isVertical changed (see setting.onUpdate)
@@ -90,6 +101,7 @@ const main = () => {
     styledText.setting.align = config.align
     styledText.setting.lineHeight = config.lineHeight
     styledText.setting.direction = config.isVertical ? 'vertical' : 'horizontal'
+    styledText.setting.overflowWrap = config.overflowWrap
     const isVertical = styledText.setting.direction === 'vertical'
 
     // set canvas writing mode for vertical text
@@ -133,6 +145,7 @@ const main = () => {
     }
     lastSetting.wrapWidth = config.wrapWidth
     lastSetting.isVertical = config.isVertical
+    lastSetting.overflowWrap = config.overflowWrap
 
     draw()
   }

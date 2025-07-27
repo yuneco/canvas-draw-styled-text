@@ -31,15 +31,27 @@
     "dev": "vite --config sample/vite.config.sample.ts",
     "build-docs": "vite --config sample/vite.config.sample.ts build && tsc",
     "build": "vite build && tsc",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:browser": "vitest --browser"
   },
   "devDependencies": {
     "@types/node": "^20.6.0",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "happy-dom": "^18.0.1",
+    "playwright": "^1.54.1",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
-    "vite-plugin-dts": "^3.5.3"
+    "vite-plugin-dts": "^3.5.3",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "css-line-break": "^2.1.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "pnpm": ">=9.0.0"
   }
 }

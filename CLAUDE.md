@@ -11,9 +11,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build-docs` - Build sample docs and run TypeScript compiler
 - `npm run preview` - Preview built sample app
 
+### Testing
+
+- `pnpm test` - Run tests with Vitest
+- `pnpm test:ui` - Run tests with Vitest UI interface  
+- `pnpm test:browser` - Run tests in browser mode (requires Playwright)
+
 ### TypeScript
 
-- `tsc` - Type check the codebase (no test framework configured)
+- `tsc` - Type check the codebase
 
 ## Architecture
 

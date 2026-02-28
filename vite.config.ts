@@ -15,11 +15,13 @@ export default defineConfig({
   plugins: [dts({
   })],
   test: {
+    setupFiles: ['./src/drawText/test-setup.ts'],
     browser: {
       enabled: true,
       provider: playwright(),
       instances: [
         { browser: 'chromium' },
+        { browser: 'webkit' },
       ],
       headless: true,
     },

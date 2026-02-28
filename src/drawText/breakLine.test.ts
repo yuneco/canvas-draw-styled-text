@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest'
 import { lineBreakWithCharMetrixes } from './breakLine'
 import { CharMetrix } from './defs/metrix'
+import { splitText } from './splitText'
 
 describe('lineBreakWithCharMetrixes', () => {
   let canvas: HTMLCanvasElement
@@ -242,6 +243,48 @@ describe('lineBreakWithCharMetrixes', () => {
           expect(result.length).toBeLessThan(text.length + 10) // 文字数+余裕を持った上限
         })
       })
+    })
+  })
+
+  describe('ZWJ emoji sequence handling', () => {
+    // splitText (Intl.Segmenter) でgrapheme単位に分割してCharMetrixを作る
+    // 実際のライブラリと同じフロー
+    const createGraphemeCharMetrixes = (text: string): CharMetrix[] => {
+      const chars = splitText(text, 'ja')
+      return chars.map(char => {
+        const isBr = char === '\n'
+        const metrix = ctx.measureText(isBr ? '\u200b' : char)
+        return { metrix, textChar: char }
+      })
+    }
+
+    it('should break line after ZWJ emoji sequence followed by newline', () => {
+      // 🐈‍⬛ はZWJ sequence (🐈 + ZWJ + ⬛) で、UTF-16では4コード単位だが
+      // Intl.Segmenterでは1 grapheme。
+      // css-line-breakはUTF-16インデックスを返すが、charMetrixesはgrapheme単位の配列。
+      // このインデックスのずれにより、絵文字の後の改行が正しく処理されない。
+      const text = 'A🐈‍⬛B\nC'
+      const charMetrixes = createGraphemeCharMetrixes(text)
+      const maxWidth = 1000
+
+      const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
+
+      // 'A🐈‍⬛B\n' と 'C' の2行になるべき
+      expect(result).toHaveLength(2)
+      expect(result[0].at).toBe(0)
+      expect(result[1].at).toBe(4) // grapheme index: A(0) 🐈‍⬛(1) B(2) \n(3) → C starts at 4
+    })
+
+    it('should break line correctly with multiple ZWJ emojis before newline', () => {
+      // 複数のZWJ絵文字があるとインデックスのずれが累積する
+      const text = '0🐈‍⬛345🐈‍⬛89\nXYZ'
+      const charMetrixes = createGraphemeCharMetrixes(text)
+      const maxWidth = 1000
+
+      const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
+
+      // '0🐈‍⬛345🐈‍⬛89\n' と 'XYZ' の2行になるべき
+      expect(result).toHaveLength(2)
     })
   })
 })

@@ -267,6 +267,47 @@ export const markerExtension: Extension<MarkerOption> = {
 }
 ```
 
+## Matching DOM Text with Canvas Rendering
+
+If you want to display the same text in both a DOM element (e.g., a TipTap/ProseMirror editor) and a canvas, the following CSS properties must be set on the **DOM element** to match the library's internal measurement. The library handles canvas-side settings automatically.
+
+```css
+.your-editor {
+  font-kerning: none;
+  line-break: strict;
+  word-break: normal;
+}
+```
+
+- **`font-kerning: none`** — The library measures text with kerning disabled. Mismatched kerning causes per-character width differences that accumulate into line break mismatches.
+- **`line-break: strict`** / **`word-break: normal`** — Must match the library's internal `css-line-break` settings.
+
+For vertical writing mode, also set `text-orientation`:
+
+```css
+.your-editor.vertical {
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+}
+```
+
+The library uses `text-orientation: sideways` for cross-browser consistent measurement. The default `mixed` orientation produces slightly different metrics, causing line break position mismatches.
+
+Additionally, ensure these values match between the DOM element and the library settings:
+
+| DOM CSS | Library Setting | Note |
+|---|---|---|
+| `font-family` | `initialStyle.fontFamily` | Must match exactly |
+| `font-size` | `initialStyle.fontSize` | In px |
+| `line-height` | `setting.lineHeight` | e.g., CSS `1.5` → `setting.lineHeight = 1.5` |
+
+Always wait for fonts to load before drawing:
+
+```ts
+await document.fonts.ready
+drawStyledText(ctx, styledText, x, y, maxWidth)
+```
+
 ## License
 
 MIT

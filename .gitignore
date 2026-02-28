@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+docs
 *.local
 
 # Editor directories and files
@@ -24,6 +25,7 @@ dist-ssr
 *.sw?
 
 __screenshots__
+test-results
 
 .claude
 .playwright-cli

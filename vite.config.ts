@@ -1,9 +1,10 @@
 import { resolve } from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
+import { playwright } from '@vitest/browser-playwright'
 import dts from 'vite-plugin-dts'
 
 export default defineConfig({
-  
+
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -16,12 +17,10 @@ export default defineConfig({
   test: {
     browser: {
       enabled: true,
+      provider: playwright(),
       instances: [
-        {
-          browser: 'chromium',
-        }
+        { browser: 'chromium' },
       ],
-      provider: 'playwright',
       headless: true,
     },
   },

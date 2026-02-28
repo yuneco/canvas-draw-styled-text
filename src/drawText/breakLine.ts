@@ -20,21 +20,57 @@ const createBreaker = (text: string) => {
 }
 type Breaker = ReturnType<typeof createBreaker>
 
+const countCodePoints = (text: string): number => {
+  let count = 0
+  for (const _char of text) {
+    count++
+  }
+  return count
+}
+
+const createGraphemeBoundaryIndexMap = (charMetrixes: CharMetrix[]) => {
+  const boundaryToIndex = new Map<number, number>()
+  let codePointOffset = 0
+
+  boundaryToIndex.set(0, 0)
+  charMetrixes.forEach((char, index) => {
+    codePointOffset += countCodePoints(char.textChar)
+    boundaryToIndex.set(codePointOffset, index + 1)
+  })
+
+  return boundaryToIndex
+}
+
 /**
  * get next word from text
  * @param breaker line breaker for source text
  * @param CharMetrixes metrix of all char
  * @returns next word. if no word, return undefined
  */
-const nextWord = (breaker: Breaker, CharMetrixes: CharMetrix[]): Word | undefined => {
-  const lb = breaker.next()
+const nextWord = (
+  breaker: Breaker,
+  charMetrixes: CharMetrix[],
+  boundaryToIndex: Map<number, number>,
+  start: number
+): Word | undefined => {
+  let lb = breaker.next()
   if (lb.done) {
     return undefined
   }
-  const start = lb.value.start
-  const end = lb.value.end
-  const length = end - start
-  const chars = CharMetrixes.slice(start, end)
+
+  let end = boundaryToIndex.get(lb.value.end)
+  while (end === undefined) {
+    lb = breaker.next()
+    if (lb.done) {
+      end = charMetrixes.length
+      break
+    }
+    end = boundaryToIndex.get(lb.value.end)
+  }
+
+  const endIndex = end ?? charMetrixes.length
+  const chars = charMetrixes.slice(start, endIndex)
+  const length = endIndex - start
   const width = chars.reduce((sum, c) => sum + c.metrix.width, 0)
   return { length, width, chars }
 }
@@ -94,6 +130,7 @@ const splitWordByMaxWidth = (word: Word, maxWidth: number): [Word] | [Word, Word
  */
 export const lineBreakWithCharMetrixes = (text: string, charMetrixes: CharMetrix[], maxWidth: number, forceOverflowWrap: boolean): LineMetrix[] => {
   const breaker = createBreaker(text)
+  const boundaryToIndex = createGraphemeBoundaryIndexMap(charMetrixes)
   let index = 0;
 
   const lines: LineMetrix[] = []
@@ -118,7 +155,7 @@ export const lineBreakWithCharMetrixes = (text: string, charMetrixes: CharMetrix
 
   while (index < charMetrixes.length) {
     // get next word
-    let word: Word | undefined = overflownWord ?? nextWord(breaker, charMetrixes);
+    let word: Word | undefined = overflownWord ?? nextWord(breaker, charMetrixes, boundaryToIndex, index);
     overflownWord = undefined
 
     // reached end of text

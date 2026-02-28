@@ -273,6 +273,7 @@ describe('lineBreakWithCharMetrixes', () => {
       expect(result).toHaveLength(2)
       expect(result[0].at).toBe(0)
       expect(result[1].at).toBe(4) // grapheme index: A(0) 🐈‍⬛(1) B(2) \n(3) → C starts at 4
+      expect(result[1].width).toBe(charMetrixes[4].metrix.width)
     })
 
     it('should break line correctly with multiple ZWJ emojis before newline', () => {
@@ -285,6 +286,35 @@ describe('lineBreakWithCharMetrixes', () => {
 
       // '0🐈‍⬛345🐈‍⬛89\n' と 'XYZ' の2行になるべき
       expect(result).toHaveLength(2)
+      expect(result[1].at).toBe(9)
+    })
+
+    it('should keep a ZWJ emoji intact when forceOverflowWrap splits an oversized word', () => {
+      const text = '🐈‍⬛A'
+      const charMetrixes = createGraphemeCharMetrixes(text)
+      const emojiWidth = charMetrixes[0].metrix.width
+      const letterWidth = charMetrixes[1].metrix.width
+      const maxWidth = emojiWidth + letterWidth / 2
+
+      const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, true)
+
+      expect(result).toHaveLength(2)
+      expect(result[0].at).toBe(0)
+      expect(result[0].width).toBe(emojiWidth)
+      expect(result[1].at).toBe(1)
+      expect(result[1].width).toBe(letterWidth)
+    })
+
+    it('should preserve combining character graphemes around newlines', () => {
+      const text = 'e\u0301\nX'
+      const charMetrixes = createGraphemeCharMetrixes(text)
+      const maxWidth = 1000
+
+      const result = lineBreakWithCharMetrixes(text, charMetrixes, maxWidth, false)
+
+      expect(result).toHaveLength(2)
+      expect(result[0].at).toBe(0)
+      expect(result[1].at).toBe(2)
     })
   })
 })

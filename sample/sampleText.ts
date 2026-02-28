@@ -6,7 +6,8 @@ export const sampleText = defineText({
 山路を登りながら、こう考えた。
 
 智に働けば角が立つ。情に棹させば流される。意地を通せば窮屈だ。とかくに人の世は住みにくい。
-emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧fin.
+emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧
+終わり。
 `,
   // base settings applied to whole text box
   setting: {
@@ -93,7 +94,7 @@ emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧fin.
     {
       at: 162,
       style: {
-        fontFamily: '"Hiragino Maru Gothic Pro"',
+        fontFamily: '"BIZ UDPGothic"',
         underline: true,
         fontSize: 48,
       },

@@ -13,6 +13,7 @@ const createShared = () => {
   // canvas and ctx for vertical writing mode
   const canvasV = createCanvas()
   canvasV.style.writingMode = 'vertical-rl'
+  canvasV.style.textOrientation = 'sideways'
   document.body.appendChild(canvasV)
   const ctxV = canvasV.getContext('2d')!
   ctxV.textBaseline = 'middle'

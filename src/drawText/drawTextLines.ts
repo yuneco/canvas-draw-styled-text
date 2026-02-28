@@ -279,9 +279,14 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   }
 
   const savedKerning = ctx.canvas.style.fontKerning
+  const savedOrientation = ctx.canvas.style.textOrientation
   ctx.canvas.style.fontKerning = 'none'
+  if (isVertical) {
+    ctx.canvas.style.textOrientation = 'sideways'
+  }
   drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)
   ctx.canvas.style.fontKerning = savedKerning
+  ctx.canvas.style.textOrientation = savedOrientation
   ctx.restore()
 
   return {

@@ -5,8 +5,13 @@ import { drawLineBox, drawLineSeparator, drawMetrixBox, drawOuterBox } from './d
 import { StyledText } from './defs/defineText'
 import { ExtensionsMap, StyleInstructionWithExtension, StyleWithExtension } from './defs/extension'
 import { Style, BaseOptions } from './defs/style'
-import { sharedCtx } from './sharedCtx'
+import { sharedCanvas, sharedCtx } from './sharedCtx'
 import { splitText } from './splitText'
+import {
+  getVerticalTextOrientation,
+  getVerticalTextOrientations,
+  type VerticalTextOrientation,
+} from './verticalOrientation'
 
 let DEBUG = false
 export const setDebug = (debug: boolean) => {
@@ -24,14 +29,23 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
   const instructions: StyleInstructionWithExtension<M>[] = []
   styles.forEach((s) => (instructions[s.at] = s))
 
+  const isVertical = text.setting.direction === 'vertical'
   const chars = splitText(text.text, text.setting.lang)
+  const orientations = isVertical ? chars.map(getVerticalTextOrientation) : []
   const textLength = chars.length
 
-  const ctx = sharedCtx(text.setting.direction)
+  let ctx = isVertical ? sharedCtx('vertical', orientations[0] ?? 'sideways') : sharedCtx('horizontal')
   setStyle(ctx, initialStyle)
   let currentStyle = { ...initialStyle }
   for (let i = 0; i < textLength; i++) {
     const char = chars[i]
+    if (isVertical) {
+      const nextCtx = sharedCtx('vertical', orientations[i] ?? 'sideways')
+      if (nextCtx !== ctx) {
+        ctx = nextCtx
+        setStyle(ctx, currentStyle)
+      }
+    }
     const style = instructions[i]
     if (style) {
       currentStyle = { ...currentStyle, ...style.style }
@@ -50,8 +64,9 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
 const computeLineText = <M extends ExtensionsMap>(
   styledText: StyledText<M>,
   charWidths: CharMetrix[],
-  breaks: LineMetrix[]
-): LineText[] => {
+  breaks: LineMetrix[],
+  charOrientations: VerticalTextOrientation[]
+): LineTextForDraw<M>[] => {
   const { styles } = styledText
   const instructions: StyleInstructionWithExtension<M>[] = []
   styles.forEach((s) => (instructions[s.at] = s))
@@ -60,6 +75,7 @@ const computeLineText = <M extends ExtensionsMap>(
     const nextLineMetrix = breaks.at(index + 1)
     const nextBreakAt = nextLineMetrix ? nextLineMetrix.at : charWidths.length
     const chars = charWidths.slice(lineMetrix.at, nextBreakAt)
+    const orientations = charOrientations.slice(lineMetrix.at, nextBreakAt)
     const charsWithStyle = chars.map((char, cIndex) => {
       const style = instructions.at(lineMetrix.at + cIndex)?.style
       return {
@@ -70,6 +86,7 @@ const computeLineText = <M extends ExtensionsMap>(
     return {
       charsWithStyle,
       lineMetrix,
+      orientations,
     }
   })
 
@@ -97,9 +114,54 @@ const mergeStyle = <M extends ExtensionsMap>(
   }
 }
 
+type LineTextForDraw<M extends ExtensionsMap> = LineText<M> & {
+  orientations: VerticalTextOrientation[]
+}
+
+const SEGMENT_RENDER_PADDING = 8
+
+// WebKit does not reliably apply per-run text-orientation changes on a single
+// visible canvas, so vertical runs are first rendered on orientation-fixed
+// offscreen canvases and then composited onto the destination canvas.
+const drawVerticalSegmentImage = (
+  ctx: CanvasRenderingContext2D,
+  orientation: VerticalTextOrientation,
+  style: Style,
+  segText: string,
+  segWidth: number,
+  pos: { x: number; y: number },
+  lineAscent: number,
+  lineHeight: number,
+  adjustment: { x: number; y: number }
+) => {
+  const renderCanvas = sharedCanvas('vertical', orientation)
+  const renderCtx = sharedCtx('vertical', orientation)
+  const padding = SEGMENT_RENDER_PADDING
+  const width = Math.max(1, Math.ceil(segWidth + padding * 2))
+  const height = Math.max(1, Math.ceil(lineHeight + padding * 2))
+  const transform = ctx.getTransform()
+  const scaleX = Math.max(1, Math.hypot(transform.a, transform.b))
+  const scaleY = Math.max(1, Math.hypot(transform.c, transform.d))
+  const backingWidth = Math.max(1, Math.ceil(width * scaleX))
+  const backingHeight = Math.max(1, Math.ceil(height * scaleY))
+
+  renderCanvas.width = backingWidth
+  renderCanvas.height = backingHeight
+  renderCtx.textBaseline = 'middle'
+  renderCtx.setTransform(scaleX, 0, 0, scaleY, 0, 0)
+  setStyle(renderCtx, style)
+  renderCtx.clearRect(0, 0, width, height)
+  renderCtx.fillText(segText, padding - adjustment.x, padding + lineAscent)
+
+  const savedSmoothing = ctx.imageSmoothingEnabled
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(renderCanvas, pos.x - padding, pos.y - padding, width, height)
+  ctx.imageSmoothingEnabled = savedSmoothing
+}
+
 const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
   ctx: CanvasRenderingContext2D,
-  lines: LineText<M>[],
+  lines: LineTextForDraw<M>[],
   text: StyledText<M>,
   maxWidth: number
 ) => {
@@ -134,26 +196,37 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
     for (let charIndex = 0; charIndex < line.charsWithStyle.length; charIndex++) {
       const charWithStyle = line.charsWithStyle.at(charIndex)
       if (!charWithStyle) break
+      const orientation = line.orientations.at(charIndex) ?? 'sideways'
+      const previousOrientation = line.orientations.at(charIndex - 1)
       // update style
       if (charWithStyle.style) {
         style = mergeStyle(style, charWithStyle.style)
         setStyle(ctx, style as Style)
       }
 
-      // get same style segment
-      if (charIndex === 0 || charWithStyle.style) {
+      // get same style/orientation segment
+      if (charIndex === 0 || charWithStyle.style || (isVertical && previousOrientation !== orientation)) {
         const segChars: CharMetrix[] = [charWithStyle.char]
         const segStart = charIndex
         const maxLen = line.charsWithStyle.length - segStart
         for (let segCharIndex = 1; segCharIndex < maxLen; segCharIndex++) {
           const cs = line.charsWithStyle.at(segStart + segCharIndex)
-          if (!cs || cs.style) {
+          const nextOrientation = line.orientations.at(segStart + segCharIndex) ?? 'sideways'
+          if (!cs || cs.style || (isVertical && nextOrientation !== orientation)) {
             break
           }
           segChars.push(cs.char)
         }
         const segWidth = segChars.reduce((sum, c) => sum + c.metrix.width, 0)
         const segText = segChars.map((c) => c.textChar).join('')
+        const currentOrientation = isVertical ? orientation : ctx.canvas.style.textOrientation
+
+        if (DEBUG) {
+          console.log('[drawStyledText:segment]', {
+            text: segText,
+            textOrientation: currentOrientation,
+          })
+        }
 
         // call extension if exists
         for (let name in style) {
@@ -167,8 +240,22 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
         // get drawing offset for safari bug
         const fitstChar = segChars.at(0)
         const adjustment = isVertical && fitstChar ? getSafariVerticalOffset(fitstChar.metrix) : { x: 0, y: 0 }
-
-        ctx.fillText(segText, pos.x - adjustment.x, pos.y + line.lineMetrix.lineAscent)
+        if (isVertical) {
+          const currentStyle = { ...style } as Style
+          drawVerticalSegmentImage(
+            ctx,
+            orientation,
+            currentStyle,
+            segText,
+            segWidth,
+            pos,
+            line.lineMetrix.lineAscent,
+            lh,
+            adjustment
+          )
+        } else {
+          ctx.fillText(segText, pos.x - adjustment.x, pos.y + line.lineMetrix.lineAscent)
+        }
         // draw debug char box
         if (DEBUG) {
           let cx = pos.x
@@ -248,13 +335,16 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   preMedured?: Partial<MeduredMatrix>
 ): MeduredMatrix => {
   const isVertical = text.setting.direction === 'vertical'
+  const charOrientations = isVertical
+    ? getVerticalTextOrientations(text.text, text.setting.lang)
+    : splitText(text.text, text.setting.lang).map(() => 'sideways' as const)
 
   const charWidths = preMedured?.charWidths ? preMedured?.charWidths : mesureTextCharWidth(text)
   const lineBreaks =
     preMedured?.charWidths && preMedured?.lineBreaks
       ? preMedured?.lineBreaks
       : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth, text.setting.overflowWrap === 'break-word')
-  const lines = computeLineText(text, charWidths, lineBreaks)
+  const lines = computeLineText(text, charWidths, lineBreaks, charOrientations)
 
   const box = getOuterBoxForLines(lineBreaks, maxWidth, text.setting)
   const outerBox = {
@@ -281,9 +371,6 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   const savedKerning = ctx.canvas.style.fontKerning
   const savedOrientation = ctx.canvas.style.textOrientation
   ctx.canvas.style.fontKerning = 'none'
-  if (isVertical) {
-    ctx.canvas.style.textOrientation = 'sideways'
-  }
   drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)
   ctx.canvas.style.fontKerning = savedKerning
   ctx.canvas.style.textOrientation = savedOrientation

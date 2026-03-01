@@ -1,3 +1,5 @@
+import type { VerticalTextOrientation } from './verticalOrientation'
+
 const createCanvas = () => {
   const canvas = document.createElement('canvas')
   canvas.width = 1
@@ -10,13 +12,15 @@ const createCanvas = () => {
 }
 
 const createShared = () => {
-  // canvas and ctx for vertical writing mode
-  const canvasV = createCanvas()
-  canvasV.style.writingMode = 'vertical-rl'
-  canvasV.style.textOrientation = 'sideways'
-  document.body.appendChild(canvasV)
-  const ctxV = canvasV.getContext('2d')!
-  ctxV.textBaseline = 'middle'
+  const createVerticalShared = (orientation: VerticalTextOrientation) => {
+    const canvas = createCanvas()
+    canvas.style.writingMode = 'vertical-rl'
+    canvas.style.textOrientation = orientation
+    document.body.appendChild(canvas)
+    const ctx = canvas.getContext('2d')!
+    ctx.textBaseline = 'middle'
+    return { canvas, ctx }
+  }
 
   // canvas and ctx for horizontal writing mode
   const canvasH = createCanvas()
@@ -27,8 +31,8 @@ const createShared = () => {
 
   return {
     vertical: {
-      canvas: canvasV,
-      ctx: ctxV,
+      mixed: createVerticalShared('mixed'),
+      sideways: createVerticalShared('sideways'),
     },
     horizontal: {
       canvas: canvasH,
@@ -39,5 +43,24 @@ const createShared = () => {
 
 const shared = createShared()
 
-export const sharedCanvas = (dir: 'vertical' | 'horizontal' = 'horizontal') => shared[dir].canvas
-export const sharedCtx = (dir: 'vertical' | 'horizontal' = 'horizontal') => shared[dir].ctx
+export const sharedCanvas = (
+  dir: 'vertical' | 'horizontal' = 'horizontal',
+  orientation: VerticalTextOrientation = 'sideways'
+) => {
+  if (dir === 'horizontal') {
+    return shared.horizontal.canvas
+  }
+
+  return shared.vertical[orientation].canvas
+}
+
+export const sharedCtx = (
+  dir: 'vertical' | 'horizontal' = 'horizontal',
+  orientation: VerticalTextOrientation = 'sideways'
+) => {
+  if (dir === 'horizontal') {
+    return shared.horizontal.ctx
+  }
+
+  return shared.vertical[orientation].ctx
+}

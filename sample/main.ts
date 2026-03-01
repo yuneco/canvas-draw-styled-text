@@ -106,6 +106,7 @@ const main = () => {
 
     // set canvas writing mode for vertical text
     canvas.style.writingMode = isVertical ? 'vertical-rl' : 'horizontal-tb'
+    canvas.style.textOrientation = ''
 
     const width = canvas.width / 2
     const height = canvas.height / 2

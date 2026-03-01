@@ -100,6 +100,7 @@ const drawText = (json: any) => {
   styledText.setting.direction = isVertical ? 'vertical' : 'horizontal'
 
   canvas.style.writingMode = isVertical ? 'vertical-rl' : 'horizontal-tb'
+  canvas.style.textOrientation = ''
   ctx.resetTransform()
   ctx.scale(DPI, DPI)
   ctx.clearRect(0, 0, canvasWidth, canvasHeight)

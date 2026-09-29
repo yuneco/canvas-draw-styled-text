@@ -46,6 +46,16 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@26.6.3)(@vitest/browser-playwright@4.1.11)(@vitest/ui@4.1.11)(vite@8.3.1(@types/node@26.6.3))
 
+  sample:
+    dependencies:
+      '@yuneco/canvas-text-styled':
+        specifier: workspace:*
+        version: link:..
+    devDependencies:
+      vite:
+        specifier: ^8.3.1
+        version: 8.3.1(@types/node@26.6.3)
+
 packages:
 
   '@blazediff/core@1.9.1':

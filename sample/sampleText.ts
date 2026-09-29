@@ -1,4 +1,4 @@
-import { FONT_WEIGHT_BOLD, FONT_WEIGHT_NORMAL, defineText, markerExtension, underLineExtension } from '../src'
+import { FONT_WEIGHT_BOLD, FONT_WEIGHT_NORMAL, defineText, markerExtension, underLineExtension } from '@yuneco/canvas-text-styled'
 
 export const sampleText = defineText({
   // text content to draw

@@ -1,5 +1,4 @@
-import { MeduredMatrix } from '../src/drawText/defs/metrix'
-import { drawStyledText, setDebug } from '../src/drawText/drawTextLines'
+import { drawStyledText, setDebug, type MeduredMatrix } from '@yuneco/canvas-text-styled'
 import { sampleText } from './sampleText'
 import './style.css'
 
@@ -14,7 +13,7 @@ const config = {
   lineHeight: sampleText.setting.lineHeight ?? 1.5,
   align: sampleText.setting.align ?? 'left',
   // set on main
-  onUpdate: (force?: boolean) => {},
+  onUpdate: (_force?: boolean) => {},
 }
 
 const createAppSizeControl = () => {

@@ -29,10 +29,10 @@
     }
   },
   "scripts": {
-    "dev": "vite --config sample/vite.config.sample.ts",
-    "build-docs": "vite --config sample/vite.config.sample.ts build && tsc",
+    "dev": "pnpm --filter ./sample dev",
+    "build-docs": "pnpm --filter ./sample build && tsc && tsc -p sample",
     "build": "vite build && tsc",
-    "preview": "vite preview",
+    "preview": "pnpm --filter ./sample preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:browser": "vitest --browser",

@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@yuneco/canvas-text-styled": ["../src/index.ts"]
+    }
+  },
+  "include": ["."]
+}

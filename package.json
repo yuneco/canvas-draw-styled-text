@@ -35,9 +35,10 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:browser": "vitest --browser",
-    "test:chrome": "TEST_CHROME=1 vitest --browser"
+    "test:chrome": "node scripts/chrome-for-testing.mjs && vitest --run --config vitest.chrome.config.ts"
   },
   "devDependencies": {
+    "@puppeteer/browsers": "^3.2.3",
     "@tiptap/core": "^3.20.0",
     "@tiptap/extension-text-style": "^3.20.0",
     "@tiptap/pm": "^3.20.0",

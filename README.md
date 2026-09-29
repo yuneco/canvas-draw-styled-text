@@ -50,6 +50,12 @@ multiline text is supported.`,
     lineHeight: 1.5,
     align: 'left',
     direction: 'horizontal',
+    // overflow wrap mode. css property 'overflow-wrap' compatible.
+    // basically, line breaks at the end of the word. only difference is when a word is longer than the line width.
+    // 'normal' (default): word will be overflowed.
+    // 'break-word': word will be split at the middle.
+    // note: if single character is longer than the line width, it will be overflowed in both cases.
+    overflowWrap: 'normal',
     // lang for Intl.Segmenter (used for get char length)
     lang: 'en',
   },

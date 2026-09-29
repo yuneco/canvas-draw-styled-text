@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.13
+
+### Added
+
+- `setting.overflowWrap` (`'normal' | 'break-word'`, default `'normal'`), compatible with the CSS `overflow-wrap` property. With `'break-word'`, a word longer than the wrap width is broken between graphemes to fit in the line. A single grapheme wider than the wrap width still overflows.
+
+### Fixed
+
+- `lineBreaks` no longer contains an empty line before a word longer than the wrap width at the beginning of the text or right after a newline. Previously, such a word was preceded by an empty line (`width: 0`, same `at` as the next line).
+  - The rendering and `outerBox` are the same as before, because the empty line had no height.
+  - **The number and contents of `lineBreaks` returned by `measureStyledText` / `drawStyledText` change for such text.** Check your code if it depends on them (e.g. counting lines or mapping text positions to lines).
+
 ## 0.1.12
 
 ### Added

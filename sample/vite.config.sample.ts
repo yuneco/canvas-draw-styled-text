@@ -2,15 +2,15 @@ import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  root: resolve(__dirname),
+  root: resolve(import.meta.dirname),
   base: "./",
   build: {
     outDir: "../docs",
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        tiptap: resolve(__dirname, 'tiptap.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        tiptap: resolve(import.meta.dirname, 'tiptap.html'),
       },
     },
   }

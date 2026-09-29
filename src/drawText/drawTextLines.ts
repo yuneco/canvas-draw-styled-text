@@ -27,7 +27,7 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
   const chars = splitText(text.text, text.setting.lang)
   const textLength = chars.length
 
-  const ctx = sharedCtx(text.setting.direction)
+  const ctx = sharedCtx(text.setting.direction, text.setting.canvasWritingMode)
   setStyle(ctx, initialStyle)
   let currentStyle = { ...initialStyle }
   for (let i = 0; i < textLength; i++) {
@@ -104,7 +104,8 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
   maxWidth: number
 ) => {
   const { align, lineHeight = 1 } = text.setting
-  const isVertical = text.setting.direction === 'vertical'
+  // offset for safari vertical text bug is needed only when canvas renders text vertically
+  const isCssVertical = text.setting.direction === 'vertical' && text.setting.canvasWritingMode !== 'horizontal-tb'
 
   const pos = {
     x: 0,
@@ -166,7 +167,7 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
 
         // get drawing offset for safari bug
         const fitstChar = segChars.at(0)
-        const adjustment = isVertical && fitstChar ? getSafariVerticalOffset(fitstChar.metrix) : { x: 0, y: 0 }
+        const adjustment = isCssVertical && fitstChar ? getSafariVerticalOffset(fitstChar.metrix) : { x: 0, y: 0 }
 
         ctx.fillText(segText, pos.x - adjustment.x, pos.y + line.lineMetrix.lineAscent)
         // draw debug char box
@@ -278,11 +279,23 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
     ctx.translate(x, y)
   }
 
+  // match drawing conditions with measurement. CSS is not restored by ctx.restore()
+  const { canvasWritingMode } = text.setting
   const savedKerning = ctx.canvas.style.fontKerning
-  ctx.canvas.style.fontKerning = 'none'
-  drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)
-  ctx.canvas.style.fontKerning = savedKerning
-  ctx.restore()
+  const savedWritingMode = ctx.canvas.style.writingMode
+  try {
+    ctx.canvas.style.fontKerning = 'none'
+    if (canvasWritingMode) {
+      ctx.canvas.style.writingMode = canvasWritingMode
+    }
+    drawTextLinesWithWidthAndBreaks(ctx, lines, text, maxWidth)
+  } finally {
+    ctx.canvas.style.fontKerning = savedKerning
+    if (canvasWritingMode) {
+      ctx.canvas.style.writingMode = savedWritingMode
+    }
+    ctx.restore()
+  }
 
   return {
     charWidths,

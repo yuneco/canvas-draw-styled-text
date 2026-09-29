@@ -168,3 +168,110 @@ describe('drawStyledText extensions', () => {
     expect(calls[0][2]).toBe(true)
   })
 })
+
+describe('canvasWritingMode', () => {
+  const widthsOf = (setting: Parameters<typeof makeText>[1]) =>
+    measureStyledText(makeText('Ab1 あ、', setting), 1000).charWidths.map((c) => c.metrix.width)
+
+  it('measures with the given writing mode regardless of direction', () => {
+    expect(widthsOf({ direction: 'vertical', canvasWritingMode: 'horizontal-tb' })).toEqual(
+      widthsOf({ direction: 'horizontal' })
+    )
+  })
+
+  it('measures with the writing mode matching direction when omitted', () => {
+    expect(widthsOf({ direction: 'vertical' })).toEqual(
+      widthsOf({ direction: 'vertical', canvasWritingMode: 'vertical-rl' })
+    )
+    expect(widthsOf({ direction: 'horizontal' })).toEqual(
+      widthsOf({ direction: 'horizontal', canvasWritingMode: 'horizontal-tb' })
+    )
+  })
+
+  it('does not carry over writing mode between measurements', () => {
+    const omitted = widthsOf({ direction: 'vertical' })
+    const explicit = widthsOf({ direction: 'vertical', canvasWritingMode: 'horizontal-tb' })
+    expect(widthsOf({ direction: 'vertical' })).toEqual(omitted)
+    expect(widthsOf({ direction: 'vertical', canvasWritingMode: 'horizontal-tb' })).toEqual(explicit)
+  })
+
+  it('applies writing mode to the drawing canvas only while drawing', () => {
+    const ctx = createCtx(300, 300, 'vertical-rl')
+    const modes: string[] = []
+    const fillText = ctx.fillText.bind(ctx)
+    ctx.fillText = (...args) => {
+      modes.push(`fillText:${ctx.canvas.style.writingMode}`)
+      fillText(...args)
+    }
+    const spy: Extension<true> = {
+      beforeSegment: (c) => {
+        modes.push(`extension:${c.canvas.style.writingMode}`)
+      },
+    }
+    const text = makeText(
+      'abc',
+      { direction: 'vertical', canvasWritingMode: 'horizontal-tb' },
+      [],
+      { spy },
+      { spy: true }
+    )
+    drawStyledText(ctx, text, 250, 10, 200)
+
+    expect(modes).toEqual(['extension:horizontal-tb', 'fillText:horizontal-tb'])
+    expect(ctx.canvas.style.writingMode).toBe('vertical-rl')
+  })
+
+  it('keeps unset writing mode unset after drawing', () => {
+    const ctx = createCtx()
+    ctx.canvas.style.writingMode = ''
+    drawStyledText(ctx, makeText('abc', { direction: 'vertical', canvasWritingMode: 'horizontal-tb' }), 250, 10, 200)
+    expect(ctx.canvas.style.getPropertyValue('writing-mode')).toBe('')
+  })
+
+  it('does not touch the drawing canvas writing mode when omitted', () => {
+    const ctx = createCtx(300, 300, 'vertical-rl')
+    const modes: string[] = []
+    const fillText = ctx.fillText.bind(ctx)
+    ctx.fillText = (...args) => {
+      modes.push(ctx.canvas.style.writingMode)
+      fillText(...args)
+    }
+    drawStyledText(ctx, makeText('abc', { direction: 'vertical' }), 250, 10, 200)
+    expect(modes).toEqual(['vertical-rl'])
+  })
+
+  it('renders the same regardless of the drawing canvas writing mode', () => {
+    const text = makeText('Ab1 あいう、えお', { direction: 'vertical', canvasWritingMode: 'horizontal-tb' })
+    const images = ['horizontal-tb', 'vertical-rl'].map((writingMode) => {
+      const ctx = createCtx(300, 300, writingMode)
+      drawStyledText(ctx, text, 250, 10, 200)
+      return ctx.canvas.toDataURL()
+    })
+    expect(images[1]).toBe(images[0])
+  })
+
+  it('restores canvas CSS and context state when an extension throws', () => {
+    const ctx = createCtx(300, 300, 'vertical-rl')
+    ctx.canvas.style.fontKerning = 'normal'
+    ctx.textBaseline = 'top'
+    const transform = ctx.getTransform().toString()
+    const broken: Extension<true> = {
+      beforeSegment: () => {
+        throw new Error('broken extension')
+      },
+    }
+    const text = makeText(
+      'abc',
+      { direction: 'vertical', canvasWritingMode: 'horizontal-tb' },
+      [],
+      { broken },
+      { broken: true }
+    )
+
+    expect(() => drawStyledText(ctx, text, 250, 10, 200)).toThrow('broken extension')
+    expect(ctx.canvas.style.writingMode).toBe('vertical-rl')
+    expect(ctx.canvas.style.fontKerning).toBe('normal')
+    expect(ctx.textBaseline).toBe('top')
+    expect(ctx.getTransform().toString()).toBe(transform)
+  })
+})

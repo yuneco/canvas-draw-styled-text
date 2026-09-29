@@ -1,3 +1,7 @@
+import { CanvasWritingMode } from './defs/style'
+
+type Direction = 'vertical' | 'horizontal'
+
 const createCanvas = () => {
   const canvas = document.createElement('canvas')
   canvas.width = 1
@@ -9,34 +13,29 @@ const createCanvas = () => {
   return canvas
 }
 
-const createShared = () => {
-  // canvas and ctx for vertical writing mode
-  const canvasV = createCanvas()
-  canvasV.style.writingMode = 'vertical-rl'
-  document.body.appendChild(canvasV)
-  const ctxV = canvasV.getContext('2d')!
-  ctxV.textBaseline = 'middle'
+const defaultWritingMode = (dir: Direction): CanvasWritingMode => (dir === 'vertical' ? 'vertical-rl' : 'horizontal-tb')
 
-  // canvas and ctx for horizontal writing mode
-  const canvasH = createCanvas()
-  canvasH.style.writingMode = 'horizontal-tb'
-  document.body.appendChild(canvasH)
-  const ctxH = canvasH.getContext('2d')!
-  ctxH.textBaseline = 'alphabetic'
+// canvas and ctx for each combination of layout direction and canvas writing mode.
+// each canvas keeps its writing mode so that measurement never depends on previous calls.
+const shared = new Map<string, { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }>()
 
-  return {
-    vertical: {
-      canvas: canvasV,
-      ctx: ctxV,
-    },
-    horizontal: {
-      canvas: canvasH,
-      ctx: ctxH,
-    },
+const getShared = (dir: Direction, writingMode: CanvasWritingMode) => {
+  const key = `${dir}/${writingMode}`
+  const cached = shared.get(key)
+  if (cached) {
+    return cached
   }
+  const canvas = createCanvas()
+  canvas.style.writingMode = writingMode
+  document.body.appendChild(canvas)
+  const ctx = canvas.getContext('2d')!
+  ctx.textBaseline = dir === 'vertical' ? 'middle' : 'alphabetic'
+  const created = { canvas, ctx }
+  shared.set(key, created)
+  return created
 }
 
-const shared = createShared()
-
-export const sharedCanvas = (dir: 'vertical' | 'horizontal' = 'horizontal') => shared[dir].canvas
-export const sharedCtx = (dir: 'vertical' | 'horizontal' = 'horizontal') => shared[dir].ctx
+export const sharedCanvas = (dir: Direction = 'horizontal', writingMode: CanvasWritingMode = defaultWritingMode(dir)) =>
+  getShared(dir, writingMode).canvas
+export const sharedCtx = (dir: Direction = 'horizontal', writingMode: CanvasWritingMode = defaultWritingMode(dir)) =>
+  getShared(dir, writingMode).ctx

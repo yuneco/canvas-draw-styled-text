@@ -23,6 +23,16 @@ export default defineConfig({
       instances: [
         { browser: 'chromium' },
         { browser: 'webkit' },
+        // installed Google Chrome (e.g. to check changes not yet in Playwright's Chromium). `pnpm test:chrome`
+        ...(process.env.TEST_CHROME
+          ? [
+              {
+                browser: 'chromium' as const,
+                name: 'chrome',
+                provider: playwright({ launchOptions: { channel: 'chrome' } }),
+              },
+            ]
+          : []),
       ],
       headless: true,
     },

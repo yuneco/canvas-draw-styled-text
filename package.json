@@ -34,7 +34,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:browser": "vitest --browser"
+    "test:browser": "vitest --browser",
+    "test:chrome": "TEST_CHROME=1 vitest --browser"
   },
   "devDependencies": {
     "@tiptap/core": "^3.20.0",

@@ -75,7 +75,6 @@ toggleBtn.onclick = () => {
   isVertical = !isVertical
   toggleBtn.textContent = isVertical ? '縦書き' : '横書き'
   editorEl.style.writingMode = isVertical ? 'vertical-rl' : 'horizontal-tb'
-  editorEl.style.textOrientation = isVertical ? 'sideways' : ''
   redraw()
 }
 toolbarEl.appendChild(toggleBtn)

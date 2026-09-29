@@ -26,7 +26,7 @@ emoji:🐈‍⬛❤️‍🔥👨‍👩‍👧
   },
   // initial style
   initialStyle: {
-    fontFamily: '"Noto Sans JP", "Hiragino Maru Gothic Pro"',
+    fontFamily: '"BIZ UDPGothic", "Hiragino Maru Gothic Pro"',
     fontSize: 30,
     fontColor: '#333',
     fontWeight: FONT_WEIGHT_NORMAL,

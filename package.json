@@ -36,7 +36,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:browser": "vitest --browser",
-    "test:chrome": "node scripts/chrome-for-testing.mjs && vitest --run --config vitest.chrome.config.ts"
+    "test:chrome": "node scripts/chrome-for-testing.mjs && vitest --run --config vitest.chrome.config.ts",
+    "release:dry": "pnpm test:browser --run && pnpm build && pnpm publish --dry-run --no-git-checks",
+    "release": "pnpm test:browser --run && pnpm build && pnpm publish"
   },
   "devDependencies": {
     "@puppeteer/browsers": "^3.2.3",

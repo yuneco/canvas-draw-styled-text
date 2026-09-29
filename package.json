@@ -31,14 +31,22 @@
     "dev": "vite --config sample/vite.config.sample.ts",
     "build-docs": "vite --config sample/vite.config.sample.ts build && tsc",
     "build": "vite build && tsc",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:browser": "vitest --browser"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
     "@typescript/typescript6": "^6.0.2",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
+    "@vitest/ui": "^4.1.11",
+    "playwright": "^1.58.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
-    "vite-plugin-dts": "^5.1.1"
+    "vite-plugin-dts": "^5.1.1",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "css-line-break": "^2.1.0"

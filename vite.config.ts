@@ -1,9 +1,10 @@
 import { resolve } from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
+import { playwright } from '@vitest/browser-playwright'
 import dts from 'vite-plugin-dts'
 
 export default defineConfig({
-  
+
   build: {
     lib: {
       entry: resolve(import.meta.dirname, 'src/index.ts'),
@@ -12,5 +13,18 @@ export default defineConfig({
     },
   },
   plugins: [dts({
-  })]
+    exclude: ['node_modules/**', 'src/**/*.test.ts', 'src/drawText/test-setup.ts'],
+  })],
+  test: {
+    setupFiles: ['./src/drawText/test-setup.ts'],
+    browser: {
+      enabled: true,
+      provider: playwright(),
+      instances: [
+        { browser: 'chromium' },
+        { browser: 'webkit' },
+      ],
+      headless: true,
+    },
+  },
 })

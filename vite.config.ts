@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   plugins: [dts({
-    exclude: ['node_modules/**', 'src/**/*.test.ts', 'src/drawText/test-setup.ts'],
+    exclude: ['node_modules/**', 'src/**/*.test.ts', 'src/**/test-*.ts'],
   })],
   test: {
     setupFiles: ['./src/drawText/test-setup.ts'],

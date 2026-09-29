@@ -2,7 +2,7 @@
   "name": "@yuneco/canvas-text-styled",
   "author": "yuneco, https://twitter.com/yuneco",
   "license": "MIT",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "keywords": [
     "canvas",
     "text",
@@ -19,7 +19,8 @@
     "url": "https://github.com/yuneco/canvas-draw-styled-text.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "exports": {
     ".": {

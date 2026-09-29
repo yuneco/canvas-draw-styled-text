@@ -134,6 +134,50 @@ The pre-measured information includes line break positions and the size of each 
 
 If you do not anticipate the need to repeatedly draw the same content or if performance optimization is not a concern for your application, you can ignore this feature.
 
+### Vertical Writing
+
+Set `direction: 'vertical'` to lay out lines vertically (top to bottom, right to left). The text box is drawn from `(x, y)` downward, and `maxWidth` is used as the line length.
+
+By default, the canvas renders each glyph according to the CSS `writing-mode` of the canvas element (e.g. upright CJK and rotated Latin with `vertical-rl`), so set it on your canvas:
+
+```ts
+canvas.style.writingMode = 'vertical-rl'
+drawStyledText(ctx, verticalText, 300, 0, 400)
+```
+
+> [!WARNING]
+> Chrome 154 and later render canvas text horizontally regardless of the canvas element's CSS `writing-mode`, following the HTML spec. With the default settings, CJK characters in vertical text are drawn sideways on these versions.
+
+#### `canvasWritingMode`
+
+`setting.canvasWritingMode` specifies the CSS `writing-mode` of canvases used for measuring and drawing, independently of `direction`. For example, with a font whose glyphs, advances and orientations are prepared for vertical writing, you can lay out lines vertically while the canvas renders text horizontally. This works the same in browsers that apply CSS `writing-mode` to canvas text and in browsers that don't.
+
+```ts
+const verticalText = defineText({
+  text: '日本語とEnglish 123',
+  setting: {
+    direction: 'vertical',
+    canvasWritingMode: 'horizontal-tb',
+  },
+  extensions: {},
+  initialStyle: {
+    // a font prepared by your app for vertical writing
+    fontFamily: '"Your Vertical Font"',
+    fontSize: 32,
+    fontColor: '#000',
+    fontWeight: FONT_WEIGHT_NORMAL,
+    fontStyle: 'normal',
+  },
+  styles: [],
+})
+drawStyledText(ctx, verticalText, 300, 0, 400)
+```
+
+- When specified, the value is used for measurement, and applied to the drawing canvas only while `drawStyledText` is running. The canvas's inline `writing-mode` is restored afterwards (an inline `!important` priority is not preserved).
+- When omitted, measurement uses the writing mode matching `direction` and the drawing canvas's CSS is left as is.
+- `canvasWritingMode` doesn't convert glyphs. Specifying `'horizontal-tb'` alone does not make a regular font look like vertical writing. Preparing such a font is up to your app.
+- `'vertical-rl'` doesn't guarantee that the browser applies CSS vertical writing to canvas text.
+
 ### Use Extensions
 
 You can use extensions to add your own custom styles. As an example, canvas-text-styled package provide `underLineExtension`.

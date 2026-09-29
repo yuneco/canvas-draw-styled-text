@@ -28,3 +28,8 @@ label {
   display: block;
 
 }
+.note {
+  margin: 4px 0 12px;
+  font-size: 12px;
+  color: #666;
+}

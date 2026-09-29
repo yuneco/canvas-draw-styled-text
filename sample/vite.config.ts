@@ -15,6 +15,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
+        tiptap: resolve(import.meta.dirname, 'tiptap.html'),
       },
     },
   },

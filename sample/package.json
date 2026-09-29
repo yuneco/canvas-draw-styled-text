@@ -8,6 +8,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tiptap/core": "^3.20.0",
+    "@tiptap/extension-text-style": "^3.20.0",
+    "@tiptap/pm": "^3.20.0",
+    "@tiptap/starter-kit": "^3.20.0",
     "@yuneco/canvas-text-styled": "workspace:*"
   },
   "devDependencies": {

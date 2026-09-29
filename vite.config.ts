@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
 import dts from 'vite-plugin-dts'
 
@@ -16,6 +16,8 @@ export default defineConfig({
     exclude: ['node_modules/**', 'src/**/*.test.ts', 'src/**/test-*.ts'],
   })],
   test: {
+    // Chrome version specific tests run separately with vitest.chrome.config.ts
+    exclude: [...configDefaults.exclude, 'src/**/*.chrome.test.ts'],
     setupFiles: ['./src/drawText/test-setup.ts'],
     browser: {
       enabled: true,
@@ -23,16 +25,6 @@ export default defineConfig({
       instances: [
         { browser: 'chromium' },
         { browser: 'webkit' },
-        // installed Google Chrome (e.g. to check changes not yet in Playwright's Chromium). `pnpm test:chrome`
-        ...(process.env.TEST_CHROME
-          ? [
-              {
-                browser: 'chromium' as const,
-                name: 'chrome',
-                provider: playwright({ launchOptions: { channel: 'chrome' } }),
-              },
-            ]
-          : []),
       ],
       headless: true,
     },

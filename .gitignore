@@ -28,6 +28,7 @@ __screenshots__
 test-results
 .vitest-attachments
 coverage
+.cache
 
 .claude
 .playwright-cli

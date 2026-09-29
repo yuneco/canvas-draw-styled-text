@@ -275,3 +275,20 @@ describe('canvasWritingMode', () => {
     expect(ctx.getTransform().toString()).toBe(transform)
   })
 })
+
+describe('overflowWrap', () => {
+  const longWord = 'Supercalifragilistic'
+
+  it('keeps a long word in a line by default', () => {
+    expect(measureStyledText(makeText(longWord), 60).lineBreaks).toHaveLength(1)
+    expect(measureStyledText(makeText(longWord, { overflowWrap: 'normal' }), 60).lineBreaks).toHaveLength(1)
+  })
+
+  it("breaks a long word with 'break-word' in both measuring and drawing", () => {
+    const text = makeText(longWord, { overflowWrap: 'break-word' })
+    const measured = measureStyledText(text, 60)
+    expect(measured.lineBreaks.length).toBeGreaterThan(1)
+    measured.lineBreaks.forEach((line) => expect(line.width).toBeLessThanOrEqual(60))
+    expect(drawStyledText(createCtx(), text, 0, 0, 60).lineBreaks).toEqual(measured.lineBreaks)
+  })
+})

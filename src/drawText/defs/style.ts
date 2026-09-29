@@ -32,6 +32,13 @@ export type BaseOptions = {
   canvasWritingMode?: CanvasWritingMode
   /** text lang. default: html lang prop */
   lang?: string
+  /**
+   * how to wrap a word longer than the wrap width. default: 'normal'
+   *
+   * - 'normal': the word overflows the line.
+   * - 'break-word': the word is broken at an arbitrary point (between graphemes) to fit in the line.
+   */
+  overflowWrap?: 'normal' | 'break-word'
 }
 
 /** CSS writing-mode for canvases */

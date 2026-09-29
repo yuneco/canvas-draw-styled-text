@@ -222,7 +222,12 @@ const getOuterBoxForLines = (
  */
 export const measureStyledText = (text: StyledText<any>, maxWidth: number): MeduredMatrix => {
   const charWidths = mesureTextCharWidth(text)
-  const lineBreaks = lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
+  const lineBreaks = lineBreakWithCharMetrixes(
+    text.text,
+    charWidths,
+    maxWidth,
+    text.setting.overflowWrap === 'break-word'
+  )
   return {
     charWidths,
     lineBreaks,
@@ -254,7 +259,7 @@ export const drawStyledText = <E extends ExtensionsMap = any>(
   const lineBreaks =
     preMedured?.charWidths && preMedured?.lineBreaks
       ? preMedured?.lineBreaks
-      : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth)
+      : lineBreakWithCharMetrixes(text.text, charWidths, maxWidth, text.setting.overflowWrap === 'break-word')
   const lines = computeLineText(text, charWidths, lineBreaks)
 
   const box = getOuterBoxForLines(lineBreaks, maxWidth, text.setting)

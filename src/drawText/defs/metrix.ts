@@ -1,9 +1,13 @@
 import { ExtensionsMap, StyleWithExtension } from './extension'
+import { GraphemeRotation } from './style'
 
 /** char metrix */
 export type CharMetrix = {
+  /** metrics of the char. `width` is the advance (1em if rotated) */
   metrix: TextMetrics
   textChar: string
+  /** rotation from `setting.rotateGrapheme`, if rotated */
+  rotation?: GraphemeRotation
 }
 
 /** line metrix */

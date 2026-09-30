@@ -4,7 +4,8 @@ import { getSafariVerticalOffset } from './compatibility/safari'
 import { drawLineBox, drawLineSeparator, drawMetrixBox, drawOuterBox } from './debugDraw'
 import { StyledText } from './defs/defineText'
 import { ExtensionsMap, StyleInstructionWithExtension, StyleWithExtension } from './defs/extension'
-import { Style, BaseOptions } from './defs/style'
+import { Style, BaseOptions, GraphemeRotation } from './defs/style'
+import { drawRotatedGrapheme, toRotation, withAdvance } from './rotateGrapheme'
 import { sharedCtx } from './sharedCtx'
 import { splitText } from './splitText'
 
@@ -27,6 +28,19 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
   const chars = splitText(text.text, text.setting.lang)
   const textLength = chars.length
 
+  // rotation of each grapheme. cached because the same grapheme appears repeatedly
+  const { rotateGrapheme } = text.setting
+  const rotations = new Map<string, GraphemeRotation | undefined>()
+  const getRotation = (char: string) => {
+    if (!rotateGrapheme || char === '\n') {
+      return undefined
+    }
+    if (!rotations.has(char)) {
+      rotations.set(char, toRotation(rotateGrapheme(char)))
+    }
+    return rotations.get(char)
+  }
+
   const ctx = sharedCtx(text.setting.direction, text.setting.canvasWritingMode)
   setStyle(ctx, initialStyle)
   let currentStyle = { ...initialStyle }
@@ -42,7 +56,13 @@ const mesureTextCharWidth = <M extends ExtensionsMap>(text: StyledText<M>): Char
     const isBr = char === '\n'
     const zeroWidthSpace = '\u200b'
     const metrix = ctx.measureText(isBr ? zeroWidthSpace : char)
-    charWidths.push({ metrix, textChar: char })
+    // rotated grapheme advances 1em
+    const rotation = getRotation(char)
+    charWidths.push(
+      rotation
+        ? { metrix: withAdvance(metrix, currentStyle.fontSize), textChar: char, rotation }
+        : { metrix, textChar: char }
+    )
   }
   return charWidths
 }
@@ -141,14 +161,16 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
         setStyle(ctx, style as Style)
       }
 
-      // get same style segment
-      if (charIndex === 0 || charWithStyle.style) {
+      // get same style segment. a rotated char is a segment by itself
+      const isRotated = charWithStyle.char.rotation !== undefined
+      const isAfterRotated = charIndex > 0 && line.charsWithStyle[charIndex - 1].char.rotation !== undefined
+      if (charIndex === 0 || charWithStyle.style || isRotated || isAfterRotated) {
         const segChars: CharMetrix[] = [charWithStyle.char]
         const segStart = charIndex
-        const maxLen = line.charsWithStyle.length - segStart
+        const maxLen = isRotated ? 1 : line.charsWithStyle.length - segStart
         for (let segCharIndex = 1; segCharIndex < maxLen; segCharIndex++) {
           const cs = line.charsWithStyle.at(segStart + segCharIndex)
-          if (!cs || cs.style) {
+          if (!cs || cs.style || cs.char.rotation !== undefined) {
             break
           }
           segChars.push(cs.char)
@@ -169,7 +191,11 @@ const drawTextLinesWithWidthAndBreaks = <M extends ExtensionsMap>(
         const fitstChar = segChars.at(0)
         const adjustment = isCssVertical && fitstChar ? getSafariVerticalOffset(fitstChar.metrix) : { x: 0, y: 0 }
 
-        ctx.fillText(segText, pos.x - adjustment.x, pos.y + line.lineMetrix.lineAscent)
+        if (fitstChar?.rotation !== undefined) {
+          drawRotatedGrapheme(ctx, fitstChar, fitstChar.rotation, pos.x, pos.y + line.lineMetrix.lineAscent)
+        } else {
+          ctx.fillText(segText, pos.x - adjustment.x, pos.y + line.lineMetrix.lineAscent)
+        }
         // draw debug char box
         if (DEBUG) {
           let cx = pos.x

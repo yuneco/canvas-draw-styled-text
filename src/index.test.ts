@@ -7,6 +7,7 @@ describe('public exports', () => {
     expect(typeof lib.drawStyledText).toBe('function')
     expect(typeof lib.measureStyledText).toBe('function')
     expect(typeof lib.setDebug).toBe('function')
+    expect(typeof lib.isEmoji).toBe('function')
     expect(typeof lib.underLineExtension.beforeSegment).toBe('function')
     expect(typeof lib.markerExtension.beforeSegment).toBe('function')
   })

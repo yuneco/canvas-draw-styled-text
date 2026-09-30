@@ -39,7 +39,24 @@ export type BaseOptions = {
    * - 'break-word': the word is broken at an arbitrary point (between graphemes) to fit in the line.
    */
   overflowWrap?: 'normal' | 'break-word'
+  /**
+   * rotate specific graphemes when drawing. called for each grapheme (except line breaks) when measuring,
+   * and should return the same result for the same grapheme.
+   *
+   * - return `90` or `-90` to rotate the grapheme by the angle (degrees, clockwise) around its center,
+   *   relative to how the canvas draws it in the line. other values (e.g. `undefined`) mean no rotation.
+   * - the advance of a rotated grapheme is 1em (`fontSize` of its style) regardless of its glyph width.
+   * - the size across the line is not changed. a rotated glyph wider than 1em may overflow the line.
+   *
+   * e.g. with `direction: 'vertical'` and `canvasWritingMode: 'horizontal-tb'`, lines are rotated by 90deg,
+   * so return `-90` for graphemes to show upright (e.g. emoji missing in a font prepared for vertical writing).
+   * with a `vertical-rl` canvas, the rotation is applied in addition to the browser's vertical text rendering.
+   */
+  rotateGrapheme?: (grapheme: string) => GraphemeRotation | undefined
 }
+
+/** rotation angle (degrees, clockwise) for `rotateGrapheme` */
+export type GraphemeRotation = 90 | -90
 
 /** CSS writing-mode for canvases */
 export type CanvasWritingMode = 'horizontal-tb' | 'vertical-rl'

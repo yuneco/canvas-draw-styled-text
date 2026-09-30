@@ -2,6 +2,7 @@ export * from './drawText/defs/style'
 export * from './drawText/defs/metrix'
 export { defineText, type StyledText } from './drawText/defs/defineText'
 export * from './drawText/drawTextLines'
+export { isEmoji } from './drawText/isEmoji'
 
 // sample extensions
 export { markerExtension } from './extensions/marker'

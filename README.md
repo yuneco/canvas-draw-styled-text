@@ -184,6 +184,29 @@ drawStyledText(ctx, verticalText, 300, 0, 400)
 - `canvasWritingMode` doesn't convert glyphs. Specifying `'horizontal-tb'` alone does not make a regular font look like vertical writing. Preparing such a font is up to your app.
 - `'vertical-rl'` doesn't guarantee that the browser applies CSS vertical writing to canvas text.
 
+#### `rotateGrapheme`
+
+`setting.rotateGrapheme` rotates specific graphemes when drawing. It is called for each grapheme, and returning `90` or `-90` rotates the grapheme by the angle (degrees, clockwise) around its center, relative to how the canvas draws it in the line.
+
+For example, with a font prepared for vertical writing, graphemes missing in the font (e.g. emoji) are drawn with a fallback font and appear sideways in vertical text. Rotate them by `-90` to cancel the rotation of the line:
+
+```ts
+import { isEmoji } from '@yuneco/canvas-text-styled'
+
+setting: {
+  direction: 'vertical',
+  canvasWritingMode: 'horizontal-tb',
+  // appFontCovers: your own check of the font's character coverage (optional)
+  rotateGrapheme: (g) => (isEmoji(g) || !appFontCovers(g) ? -90 : undefined),
+},
+```
+
+- It is called when measuring, for every grapheme except line breaks, in any `direction` and `canvasWritingMode`. It should return the same result for the same grapheme.
+- Values other than `90` and `-90` mean no rotation.
+- The advance of a rotated grapheme is 1em (`fontSize` of its style), regardless of its glyph width. The size across the line doesn't change, so a rotated glyph wider than 1em may overflow the line.
+- With a `vertical-rl` canvas, the rotation is applied in addition to the browser's vertical text rendering.
+- `isEmoji(grapheme)` returns true for graphemes displayed as emoji by default (with `Emoji_Presentation` characters or VS16 `U+FE0F`), e.g. `😀`, `👨‍👩‍👧`, `🇯🇵`, `❤️`, `1️⃣`, and false for text presentation characters such as `❤`, `©` and `1`.
+
 ### Use Extensions
 
 You can use extensions to add your own custom styles. As an example, canvas-text-styled package provide `underLineExtension`.

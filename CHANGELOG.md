@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.14
+
+### Added
+
+- `setting.rotateGrapheme` (`(grapheme: string) => 90 | -90 | undefined`): rotates specific graphemes around their center when drawing. A rotated grapheme advances 1em. See [rotateGrapheme](./README.md#rotategrapheme).
+  - With `direction: 'vertical'` and `canvasWritingMode: 'horizontal-tb'`, return `-90` for graphemes missing in a font prepared for vertical writing (e.g. emoji) to show them upright.
+- `isEmoji(grapheme)`: whether the grapheme is displayed as emoji by default.
+- Exported type `GraphemeRotation`. `CharMetrix` has an optional `rotation` for rotated graphemes.
+
+### Unchanged
+
+- Without `rotateGrapheme`, measurement and rendering are the same as 0.1.13.
+
 ## 0.1.13
 
 ### Added
